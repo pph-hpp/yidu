@@ -148,6 +148,15 @@ test('设置保存、密钥隔离、接口兼容与未保存确认', async ({}, 
   const stored = await readFile(resolve(info.outputPath('profile'), 'secrets.json'), 'utf8')
   expect(stored).not.toContain('test-only-key')
   await page.getByLabel('设置', { exact: true }).click()
+  const keyInput = page.getByRole('dialog', { name: '设置' }).getByLabel('API Key')
+  await expect(keyInput).toHaveAttribute('type', 'password')
+  await expect(keyInput).toHaveValue('')
+  await page.getByRole('button', { name: '显示密钥' }).click()
+  await expect(keyInput).toHaveAttribute('type', 'text')
+  await expect(keyInput).toHaveValue('test-only-key')
+  await page.getByRole('button', { name: '隐藏密钥' }).click()
+  await expect(keyInput).toHaveAttribute('type', 'password')
+  await expect(keyInput).toHaveValue('')
   await page.getByRole('button', { name: '测试连接', exact: true }).click()
   await expect(page.getByRole('status').filter({ hasText: '连接正常' })).toBeVisible()
   expect(requests[0].body.max_tokens).toBe(5)
@@ -213,10 +222,15 @@ test('编辑后点击重译提交新原文并恢复浏览模式', async () => {
   const card = page.getByTestId('sentence-card')
   await expect(card).toHaveAttribute('data-status', 'done')
   const editor = card.getByLabel('编辑原文', { exact: true })
-  for (const source of ['The revised source sentence.', 'Another revision of the source sentence.']) {
+  for (const source of [
+    'The revised source sentence.',
+    'Another revision of the source sentence.'
+  ]) {
     await card.getByLabel('编辑第 1 句原文').click()
     await expect(editor).toHaveValue(
-      source.startsWith('Another') ? 'The revised source sentence.' : 'The original source sentence.'
+      source.startsWith('Another')
+        ? 'The revised source sentence.'
+        : 'The original source sentence.'
     )
     await editor.fill(source)
     const previousRequests = requests.length

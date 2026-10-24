@@ -19,6 +19,11 @@ export class SecretService {
     validId(profileId)
     return !!this.store.get('keys')[profileId]
   }
+  // 仅供设置页点击「显示」时读取，渲染进程不缓存
+  reveal(profileId: unknown): string {
+    validId(profileId)
+    return this.get(profileId)
+  }
   get(profileId: string): string {
     if (!safeStorage.isEncryptionAvailable()) throw new Error('系统加密不可用')
     const cipher = this.store.get('keys')[profileId]

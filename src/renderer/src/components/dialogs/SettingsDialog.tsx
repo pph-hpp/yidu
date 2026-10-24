@@ -14,6 +14,7 @@ export function SettingsDialog() {
   const [keys, setKeys] = useState<Record<string, string>>({}),
     [hasKey, setHasKey] = useState(false),
     [reveal, setReveal] = useState(false),
+    [storedKey, setStoredKey] = useState(''),
     [message, setMessage] = useState(''),
     [ok, setOk] = useState(false),
     [busy, setBusy] = useState(false),
@@ -26,10 +27,32 @@ export function SettingsDialog() {
       if (live) setHasKey(v)
     })
     setMessage('')
+    setReveal(false)
+    setStoredKey('')
     return () => {
       live = false
     }
   }, [profileId])
+  const toggleReveal = async () => {
+    if (reveal) {
+      setReveal(false)
+      setStoredKey('')
+      return
+    }
+    // 已保存的密钥只在主进程，点击「显示」时才取一次明文，隐藏后立即丢弃
+    if (hasKey && keys[profileId] === undefined) {
+      try {
+        setStoredKey(await window.api.revealSecret({ profileId }))
+      } catch (e) {
+        setOk(false)
+        setMessage(
+          (e as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
+        )
+        return
+      }
+    }
+    setReveal(true)
+  }
   const updateProfile = (patch: Partial<ModelProfile>) =>
     setDraft((d) => ({
       ...d,
@@ -207,14 +230,20 @@ export function SettingsDialog() {
                 <div className={styles.row}>
                   <input
                     type={reveal ? 'text' : 'password'}
-                    value={keys[profileId] ?? ''}
+                    value={keys[profileId] ?? (reveal ? storedKey : '')}
                     placeholder={hasKey ? '••••••••' : '输入 API Key'}
                     autoComplete="off"
+                    spellCheck={false}
                     onChange={(e) => setKeys((k) => ({ ...k, [profileId]: e.target.value }))}
                   />
                   <button
+                    type="button"
                     aria-label={reveal ? '隐藏密钥' : '显示密钥'}
-                    onClick={() => setReveal(!reveal)}
+                    aria-pressed={reveal}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      void toggleReveal()
+                    }}
                   >
                     {reveal ? '隐藏' : '显示'}
                   </button>

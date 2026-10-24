@@ -37,6 +37,7 @@ const api: YiduAPI = {
   setConfig: (patch) => ipcRenderer.invoke(IPC.CONFIG_SET, patch),
   setSecret: (req) => ipcRenderer.invoke(IPC.SECRET_SET, req),
   hasSecret: (req) => ipcRenderer.invoke(IPC.SECRET_HAS, req),
+  revealSecret: (req) => ipcRenderer.invoke(IPC.SECRET_REVEAL, req),
   testConnection: (req) => ipcRenderer.invoke(IPC.LLM_TEST, req),
   translate: (req) => ipcRenderer.invoke(IPC.LLM_TRANSLATE, req),
   cancelTranslation: (req) => ipcRenderer.invoke(IPC.LLM_CANCEL, req),

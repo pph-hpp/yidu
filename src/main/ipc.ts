@@ -153,6 +153,7 @@ export function registerIPC(
     secrets.set(p.profileId, p.apiKey)
   })
   handle(IPC.SECRET_HAS, async (arg) => secrets.has(payload(arg).profileId))
+  handle(IPC.SECRET_REVEAL, async (arg) => secrets.reveal(payload(arg).profileId))
   handle(IPC.LLM_TEST, async (arg) => llm.test(payload(arg).profile))
   handle(IPC.LLM_CANCEL, async (arg) => llm.cancel(payload(arg).requestId))
   handle(IPC.LLM_TRANSLATE, async (arg) => {

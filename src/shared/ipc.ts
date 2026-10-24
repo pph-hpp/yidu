@@ -30,6 +30,7 @@ export const IPC = {
   CONFIG_SET: 'config:set',
   SECRET_SET: 'secret:set',
   SECRET_HAS: 'secret:has',
+  SECRET_REVEAL: 'secret:reveal',
   APP_CLOSE_REQUEST: 'app:closeRequest',
   APP_CLOSE_CONFIRMED: 'app:closeConfirmed'
 } as const
@@ -57,6 +58,7 @@ export interface YiduAPI {
   setConfig(patch: Partial<AppConfig>): Promise<AppConfig>
   setSecret(req: { profileId: string; apiKey: string }): Promise<void>
   hasSecret(req: { profileId: string }): Promise<boolean>
+  revealSecret(req: { profileId: string }): Promise<string>
   testConnection(req: { profile: ModelProfile }): Promise<ConnectionResult>
   translate(req: TranslateRequest): Promise<void>
   cancelTranslation(req: { requestId: string }): Promise<void>
