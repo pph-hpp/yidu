@@ -7,7 +7,7 @@ Electron + React + TypeScript 桌面文献翻译阅读器。按 `docs/译读-开
 当前机器已装好依赖，在 PowerShell 中执行：
 
 ```powershell
-Set-Location E:\CS\zhiyun
+Set-Location E:\CS\yidu
 npm run dev
 ```
 
