@@ -35,6 +35,10 @@ export function SentenceCard({
   const state = useTranslateStore(),
     [editing, setEditing] = useState<string | null>(null),
     [edit, setEdit] = useState('')
+  const retry = () => {
+    state.retry(s.id, editing === s.id ? edit : undefined)
+    setEditing(null)
+  }
   const copy = (text: string) =>
     void navigator.clipboard
       .writeText(text)
@@ -64,7 +68,7 @@ export function SentenceCard({
           >
             复制
           </button>
-          <button aria-label={'重译第 ' + s.index + ' 句'} onClick={() => state.retry(s.id)}>
+          <button aria-label={'重译第 ' + s.index + ' 句'} onClick={retry}>
             重译
           </button>
           <button
@@ -97,8 +101,7 @@ export function SentenceCard({
               if (e.key === 'Escape') setEditing(null)
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
-                state.retry(s.id, edit)
-                setEditing(null)
+                retry()
               }
             }}
           />

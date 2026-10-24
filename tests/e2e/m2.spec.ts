@@ -207,3 +207,31 @@ test('选区自动翻译、锁定和编辑原文', async () => {
   )
   await expect(page.getByTestId('sentence-card')).toContainText('译文1')
 })
+
+test('编辑后点击重译提交新原文并恢复浏览模式', async () => {
+  await translate('The original source sentence.')
+  const card = page.getByTestId('sentence-card')
+  await expect(card).toHaveAttribute('data-status', 'done')
+  const editor = card.getByLabel('编辑原文', { exact: true })
+  for (const source of ['The revised source sentence.', 'Another revision of the source sentence.']) {
+    await card.getByLabel('编辑第 1 句原文').click()
+    await expect(editor).toHaveValue(
+      source.startsWith('Another') ? 'The revised source sentence.' : 'The original source sentence.'
+    )
+    await editor.fill(source)
+    const previousRequests = requests.length
+    await card.getByLabel('重译第 1 句').click()
+    await expect(editor).toHaveCount(0)
+    await expect(card).toContainText(source)
+    await expect.poll(() => requests.length).toBe(previousRequests + 1)
+    const messages = requests.at(-1)!.body.messages as Array<{ content: string }>
+    expect(messages.at(-1)!.content).toContain(source)
+    await expect(card).toHaveAttribute('data-status', 'done')
+    await expect(card).toContainText('译文1')
+    await expect(editor).toHaveCount(0)
+  }
+  await card.getByLabel('重译第 1 句').click()
+  await expect(card).toHaveAttribute('data-status', 'done')
+  await expect(card).toContainText('Another revision of the source sentence.')
+  await expect(editor).toHaveCount(0)
+})
