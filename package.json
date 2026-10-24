@@ -1,6 +1,6 @@
 {
   "name": "yidu",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "译读 — PDF / Markdown 文献翻译阅读器",
   "main": "out/main/index.js",
