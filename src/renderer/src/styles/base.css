@@ -1,0 +1,11 @@
+*{box-sizing:border-box}body{margin:0;background:var(--bg-app);color:var(--text-primary);font:var(--px-14)/1.5 var(--font-ui);overflow:hidden}
+button,input{font:inherit;color:inherit}button{display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;cursor:pointer;border-radius:var(--radius);font-size:var(--px-13);color:var(--text-body);transition:background var(--transition)}
+button:hover:enabled{background:var(--bg-muted)}button:disabled{cursor:default;opacity:.4}
+button.primary{height:var(--px-36);padding:0 var(--px-16);background:var(--accent);color:var(--bg-panel);font-weight:500}
+button.primary:hover{background:var(--accent-hover)}
+:focus-visible{outline:var(--px-2) solid var(--accent);outline-offset:var(--px-2)}
+::selection,.textLayer ::selection{background:var(--selection)}
+.textLayer{z-index:2}.textLayer .endOfContent{display:block;position:absolute;inset:100% 0 0;z-index:-1;cursor:default;user-select:none}.textLayer.selecting .endOfContent{top:0}
+.spinner{display:inline-block;width:var(--px-20);height:var(--px-20);border:var(--px-2) solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
