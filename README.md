@@ -1,5 +1,7 @@
 # 译读
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 Electron + React + TypeScript 桌面文献翻译阅读器。按 `docs/译读-开发设计文档.md` 实现 M1～M5；PDF / Markdown 阅读、流式翻译、全文总结、标准 PDF 标注、深色模式和 Windows 安装包已完成。`docs/` 保持原样。
 
 ## 启动
@@ -98,3 +100,12 @@ node scripts/verify-summary-file.cjs 'E:\path\paper.pdf'
 ```
 
 此脚本验证全文提取、分块、汇总和保存，以及所有页码是否进入请求。临时配置和模拟结果存放在忽略的 `.local/` 下，原 PDF 不会写回或加入版本库。
+
+## 许可证
+
+本项目以 [MIT 许可证](LICENSE) 开源。
+
+随附的第三方资源保留各自的许可：
+
+- 字体 Inter、Noto Sans SC、Source Serif 4：SIL Open Font License 1.1，见 `resources/licenses/`
+- 测试素材：原创合成文件为 CC0-1.0；arXiv 论文及节选为 CC BY 4.0，来源与署名见 `tests/fixtures/LICENSE.txt`

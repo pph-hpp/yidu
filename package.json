@@ -47,5 +47,6 @@
     "vite": "^5.4.0",
     "vitest": "^2.0.0"
   },
-  "author": "译读"
+  "author": "译读",
+  "license": "MIT"
 }
