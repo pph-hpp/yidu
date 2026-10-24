@@ -1,0 +1,17 @@
+name: M1 检查
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run e2e
+      - name: 生产依赖审计
+        run: npm audit --omit=dev --audit-level=moderate

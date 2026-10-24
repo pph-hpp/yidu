@@ -10,4 +10,3 @@ describe('15.1 textClean', () => {
     ['12 First line\n13 Second line\n\n42', 'First line Second line']
   ])('%j → %j', (input, output) => expect(textClean(input)).toBe(output))
 })
-

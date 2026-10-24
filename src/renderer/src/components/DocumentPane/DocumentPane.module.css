@@ -1,1 +1,46 @@
-.document{min-height:0;flex:1;position:relative;display:flex;flex-direction:column;outline:none}.empty{flex:1;display:grid;place-items:center;padding:var(--px-32) var(--px-24)}.card{width:var(--px-420);height:var(--px-240);display:flex;flex-direction:column;align-items:center;justify-content:center;border:var(--px-1_5) dashed var(--border-input);border-radius:var(--radius-dialog);color:var(--text-secondary)}.card h1{font-size:var(--px-15);font-weight:600;color:var(--text-primary);margin:var(--px-16) 0 0}.card p{font-size:var(--px-12);margin:var(--px-8) 0 var(--px-20)}.error{padding:var(--px-12) var(--px-24);color:var(--danger);background:var(--bg-panel);font-size:var(--px-13)}.loading{padding:var(--px-8) var(--px-24);font-size:var(--px-12);color:var(--text-secondary)}
+.document {
+  min-height: 0;
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+.empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: var(--px-32) var(--px-24);
+}
+.card {
+  width: var(--px-420);
+  height: var(--px-240);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: var(--px-1_5) dashed var(--border-input);
+  border-radius: var(--radius-dialog);
+  color: var(--text-secondary);
+}
+.card h1 {
+  font-size: var(--px-15);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: var(--px-16) 0 0;
+}
+.card p {
+  font-size: var(--px-12);
+  margin: var(--px-8) 0 var(--px-20);
+}
+.error {
+  padding: var(--px-12) var(--px-24);
+  color: var(--danger);
+  background: var(--bg-panel);
+  font-size: var(--px-13);
+}
+.loading {
+  padding: var(--px-8) var(--px-24);
+  font-size: var(--px-12);
+  color: var(--text-secondary);
+}

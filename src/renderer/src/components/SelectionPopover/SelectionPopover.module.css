@@ -1,2 +1,25 @@
-.popover{position:fixed;display:flex;gap:0;background:var(--tooltip-bg);color:var(--popover-text);padding:var(--px-4);border-radius:var(--radius-card);box-shadow:var(--shadow-selection);z-index:30}.popover button{color:var(--popover-text);height:var(--px-30);padding:0 var(--px-10);border-radius:var(--radius-sm);font-size:var(--px-12)}.popover .translate{background:var(--accent);color:var(--bg-panel)}.popover button:hover:enabled{background:var(--accent-hover)}
-
+.popover {
+  position: fixed;
+  display: flex;
+  gap: 0;
+  background: var(--tooltip-bg);
+  color: var(--popover-text);
+  padding: var(--px-4);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-selection);
+  z-index: 30;
+}
+.popover button {
+  color: var(--popover-text);
+  height: var(--px-30);
+  padding: 0 var(--px-10);
+  border-radius: var(--radius-sm);
+  font-size: var(--px-12);
+}
+.popover .translate {
+  background: var(--accent);
+  color: var(--bg-panel);
+}
+.popover button:hover:enabled {
+  background: var(--accent-hover);
+}

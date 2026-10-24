@@ -1,10 +1,14 @@
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { mkdtemp, writeFile, rm, open } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, expect, it } from 'vitest'
 import { FileService } from '../../src/main/services/file.service'
 const folder = await mkdtemp(join(tmpdir(), 'yidu-unit-'))
-afterAll(() => rm(folder, { recursive: true, force: true }))
+afterAll(() => {
+  if (!folder.startsWith(join(tmpdir(), 'yidu-unit-')))
+    throw new Error('Unexpected test cleanup path')
+  return rm(folder, { recursive: true, force: true })
+})
 it('returns BOM-free UTF-8, stable fileId, and a main-process path mapping', async () => {
   const path = join(folder, 'sample.markdown')
   await writeFile(path, '\uFEFF# 中文')
@@ -22,3 +26,10 @@ it('rejects invalid UTF-8 and missing files', async () => {
   await expect(new FileService().openPath({ path: join(folder, 'missing.pdf') })).rejects.toThrow()
 })
 
+it('rejects a file over 200 MB before reading its contents', async () => {
+  const path = join(folder, 'oversize.pdf')
+  const handle = await open(path, 'w')
+  await handle.truncate(200 * 1024 * 1024 + 1)
+  await handle.close()
+  await expect(new FileService().openPath({ path })).rejects.toThrow('200 MB')
+})

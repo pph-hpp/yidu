@@ -3,8 +3,11 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import type { OpenedFile } from '../../../../shared/types'
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 interface Entry {
-  task: pdfjs.PDFDocumentLoadingTask; promise: Promise<pdfjs.PDFDocumentProxy>
-  scrollTop: number; scrollLeft: number; zoom: number
+  task: pdfjs.PDFDocumentLoadingTask
+  promise: Promise<pdfjs.PDFDocumentProxy>
+  scrollTop: number
+  scrollLeft: number
+  zoom: number
 }
 const cache = new Map<string, Entry>()
 export function getPdf(file: OpenedFile): Entry {
@@ -17,9 +20,9 @@ export function getPdf(file: OpenedFile): Entry {
   return entry
 }
 export function releaseClosedPdfs(openIds: string[]): void {
-  for (const [id, entry] of cache) if (!openIds.includes(id)) {
-    void entry.task.destroy().catch(() => {})
-    cache.delete(id)
-  }
+  for (const [id, entry] of cache)
+    if (!openIds.includes(id)) {
+      void entry.task.destroy().catch(() => {})
+      cache.delete(id)
+    }
 }
-

@@ -1,7 +1,10 @@
 const paths = {
   file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h5',
-  plus: 'M12 5v14 M5 12h14', minus: 'M5 12h14', close: 'm6 6 12 12 M6 18 18 6',
-  settings: 'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
+  plus: 'M12 5v14 M5 12h14',
+  minus: 'M5 12h14',
+  close: 'm6 6 12 12 M6 18 18 6',
+  settings:
+    'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
   summary: 'M4 5h10 M4 10h10 M4 15h5 M13 17l3 3 6-7',
   select: 'M8 3h8 M12 3v18 M8 21h8 M4 8h3 M17 8h3 M4 16h3 M17 16h3',
   highlight: 'm6 14 8-11 6 5-8 11z M6 14l-2 7 8-2 M3 22h10',
@@ -18,6 +21,19 @@ const paths = {
 } as const
 export type IconName = keyof typeof paths
 export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name]} /></svg>
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={paths[name]} />
+    </svg>
+  )
 }
-
