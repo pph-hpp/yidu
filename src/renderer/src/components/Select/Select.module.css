@@ -1,0 +1,184 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--px-8);
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition);
+}
+.value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chevron {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  transition: transform var(--transition);
+}
+.chevron[data-open='true'] {
+  transform: rotate(180deg);
+}
+
+/* 表单字段：与输入框同高同边框 */
+.field {
+  width: 100%;
+  height: var(--px-40);
+  padding: 0 var(--px-10) 0 var(--px-12);
+  font-size: var(--px-13);
+  font-weight: 400;
+  color: var(--text-body);
+  background: var(--bg-panel);
+  border: var(--px-1) solid var(--border-input);
+  border-radius: var(--radius);
+}
+.field:hover:enabled {
+  background: var(--bg-panel);
+  border-color: var(--text-secondary);
+}
+.field[aria-expanded='true'],
+.field[aria-expanded='true']:hover:enabled {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 var(--px-3) var(--accent-soft);
+}
+.field:disabled {
+  opacity: 1;
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border-color: var(--border);
+}
+
+/* 顶栏等工具区 */
+.compact {
+  height: var(--px-30);
+  padding: 0 var(--px-8) 0 var(--px-10);
+  gap: var(--px-6);
+  font-size: var(--px-12);
+  color: var(--text-secondary);
+  background: var(--bg-panel);
+  border: var(--px-1) solid var(--border);
+  border-radius: var(--radius);
+}
+.compact:hover:enabled,
+.compact[aria-expanded='true'] {
+  color: var(--text-body);
+  background: var(--bg-muted);
+}
+
+/* 翻译栏头部的小标签 */
+.chip {
+  height: var(--px-24);
+  padding: 0 var(--px-6) 0 var(--px-8);
+  gap: var(--px-6);
+  font-size: var(--px-12);
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border-radius: var(--radius-sm);
+}
+.chip:hover:enabled,
+.chip[aria-expanded='true'] {
+  background: var(--bg-subtle);
+  color: var(--text-body);
+}
+.chip[data-tone='accent'] {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+.chip[data-tone='accent'] .chevron {
+  color: var(--accent-ink);
+}
+.chip[data-tone='accent']:hover:enabled,
+.chip[data-tone='accent'][aria-expanded='true'] {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 var(--px-1) var(--accent);
+}
+
+.list {
+  position: fixed;
+  z-index: 200;
+  box-sizing: border-box;
+  max-width: min(360px, calc(100vw - var(--px-16)));
+  max-height: 280px;
+  overflow-y: auto;
+  padding: var(--px-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--px-2);
+  background: var(--bg-panel);
+  border: var(--px-1) solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+  font-family: var(--font-ui);
+  animation: list-in 120ms ease-out;
+}
+.list[data-placement='top'] {
+  animation-name: list-in-up;
+}
+.option {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--px-12);
+  border-radius: var(--radius-sm);
+  color: var(--text-body);
+  cursor: pointer;
+  user-select: none;
+}
+.list-field .option {
+  height: var(--px-36);
+  padding: 0 var(--px-10) 0 var(--px-12);
+  font-size: var(--px-13);
+}
+.list-compact .option,
+.list-chip .option {
+  height: var(--px-32);
+  padding: 0 var(--px-10);
+  font-size: var(--px-13);
+}
+.label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.option[data-active='true'] {
+  background: var(--bg-subtle);
+}
+.option[aria-selected='true'] {
+  color: var(--accent-ink);
+  font-weight: 500;
+}
+.option[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+}
+@keyframes list-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--px-4)));
+  }
+}
+@keyframes list-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--px-4));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .list,
+  .chevron {
+    animation: none;
+    transition: none;
+  }
+}

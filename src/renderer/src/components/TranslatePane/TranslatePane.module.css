@@ -49,25 +49,14 @@
 }
 .model,
 .preset {
-  height: var(--px-24);
-  padding: 0 var(--px-8);
-  border-radius: var(--px-6);
-  display: flex;
-  align-items: center;
-  gap: var(--px-6);
-}
-.model {
-  background: var(--bg-muted);
+  max-width: var(--px-200);
 }
 .model i {
+  flex: 0 0 auto;
   width: var(--px-6);
   height: var(--px-6);
   border-radius: 50%;
   background: var(--text-secondary);
-}
-.preset {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
 }
 .list {
   flex: 1;
@@ -185,13 +174,6 @@
   }
 }
 
-.tags select {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  max-width: var(--px-200);
-}
 .model i[data-active='true'] {
   background: var(--accent);
 }

@@ -101,7 +101,7 @@ test.beforeEach(async ({}, info) => {
   }
   await page.evaluate((config) => window.api.setConfig(config), config)
   await page.reload()
-  await expect(page.getByLabel('当前模型')).toHaveValue('default')
+  await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
   await app.evaluate(({ dialog }, output) => {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: output })
   }, output)

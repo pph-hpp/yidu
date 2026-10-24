@@ -17,7 +17,9 @@ const paths = {
   copy: 'M8 8h13v13H8z M16 8V3H3v13h5',
   lock: 'M5 10h14v11H5z M8 10V6a4 4 0 0 1 8 0v4',
   arrow: 'M12 20V4 M5 11l7-7 7 7',
-  markdown: 'M2 5v14 M2 5l5 7 5-7v14 M18 5v14 M15 16l3 3 3-3'
+  markdown: 'M2 5v14 M2 5l5 7 5-7v14 M18 5v14 M15 16l3 3 3-3',
+  chevron: 'm6 9 6 6 6-6',
+  check: 'M5 12.5 10 17.5 19 7'
 } as const
 export type IconName = keyof typeof paths
 export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {

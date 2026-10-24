@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { Icon } from '../Icon'
 import styles from './Modal.module.css'
 export function Modal({
   title,
@@ -72,7 +73,7 @@ export function Modal({
         <header className={styles.header}>
           <h2>{title}</h2>
           <button aria-label="关闭对话框" onClick={onClose}>
-            ×
+            <Icon name="close" size={16} />
           </button>
         </header>
         {children}

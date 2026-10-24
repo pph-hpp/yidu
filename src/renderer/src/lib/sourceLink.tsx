@@ -96,7 +96,8 @@ export function SourceLinkOverlay() {
     }
   }, [])
   return (
-    <div aria-hidden="true">
+    // display: contents 让外层不占用 .app 网格行，否则状态栏会被挤到隐式第 4 行
+    <div aria-hidden="true" style={{ display: 'contents' }}>
       {rects.map((r, i) => (
         <div
           key={i}

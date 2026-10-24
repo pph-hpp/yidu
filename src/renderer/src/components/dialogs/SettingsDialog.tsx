@@ -3,6 +3,7 @@ import { useSettingsStore } from '../../stores/settingsStore'
 import { defaultConfig } from '../../../../shared/config'
 import type { ModelProfile, PromptPreset } from '../../../../shared/types'
 import { Modal } from './Modal'
+import { Select } from '../Select/Select'
 import styles from './SettingsDialog.module.css'
 export function SettingsDialog() {
   const saved = useSettingsStore((s) => s.config)!
@@ -113,22 +114,17 @@ export function SettingsDialog() {
               <div className={styles.row}>
                 <label>
                   模型配置
-                  <select
+                  <Select
                     value={profileId}
-                    onChange={(e) => {
-                      setProfileId(e.target.value)
+                    options={draft.profiles.map((p) => ({ value: p.id, label: p.name }))}
+                    onChange={(value) => {
+                      setProfileId(value)
                       setDraft((d) => ({
                         ...d,
-                        settings: { ...d.settings, activeProfileId: e.target.value }
+                        settings: { ...d.settings, activeProfileId: value }
                       }))
                     }}
-                  >
-                    {draft.profiles.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </label>
                 <button
                   onClick={() => {
@@ -179,24 +175,25 @@ export function SettingsDialog() {
               </label>
               <label>
                 接口类型
-                <select
+                <Select<ModelProfile['provider']>
                   value={profile.provider}
-                  onChange={(e) =>
+                  options={[
+                    { value: 'openai-compatible', label: 'OpenAI 兼容接口（推荐）' },
+                    { value: 'anthropic', label: 'Anthropic Messages' },
+                    { value: 'azure-openai', label: 'Azure OpenAI' }
+                  ]}
+                  onChange={(provider) =>
                     updateProfile({
-                      provider: e.target.value as ModelProfile['provider'],
+                      provider,
                       baseUrl:
-                        e.target.value === 'anthropic'
+                        provider === 'anthropic'
                           ? 'https://api.anthropic.com'
-                          : e.target.value === 'azure-openai'
+                          : provider === 'azure-openai'
                             ? 'https://YOUR-RESOURCE.openai.azure.com'
                             : 'https://api.openai.com/v1'
                     })
                   }
-                >
-                  <option value="openai-compatible">OpenAI 兼容接口（推荐）</option>
-                  <option value="anthropic">Anthropic Messages</option>
-                  <option value="azure-openai">Azure OpenAI</option>
-                </select>
+                />
               </label>
               <label>
                 Base URL
@@ -280,22 +277,17 @@ export function SettingsDialog() {
               <div className={styles.row}>
                 <label>
                   提示词预设
-                  <select
+                  <Select
                     value={presetId}
-                    onChange={(e) => {
-                      setPresetId(e.target.value)
+                    options={draft.presets.map((p) => ({ value: p.id, label: p.name }))}
+                    onChange={(value) => {
+                      setPresetId(value)
                       setDraft((d) => ({
                         ...d,
-                        settings: { ...d.settings, activePresetId: e.target.value }
+                        settings: { ...d.settings, activePresetId: value }
                       }))
                     }}
-                  >
-                    {draft.presets.map((p) => (
-                      <option value={p.id} key={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </label>
                 <button
                   onClick={() => {
@@ -390,27 +382,28 @@ export function SettingsDialog() {
             <>
               <label>
                 目标语言
-                <select value="zh-CN" disabled>
-                  <option value="zh-CN">简体中文</option>
-                </select>
+                <Select
+                  value="zh-CN"
+                  disabled
+                  options={[{ value: 'zh-CN', label: '简体中文' }]}
+                  onChange={() => {}}
+                />
               </label>
               <label>
                 默认翻译模式
-                <select
+                <Select
                   value={draft.settings.defaultMode}
-                  onChange={(e) =>
+                  options={[
+                    { value: 'sentence', label: '逐句' },
+                    { value: 'paragraph', label: '整段' }
+                  ]}
+                  onChange={(defaultMode) =>
                     setDraft((d) => ({
                       ...d,
-                      settings: {
-                        ...d.settings,
-                        defaultMode: e.target.value as 'sentence' | 'paragraph'
-                      }
+                      settings: { ...d.settings, defaultMode }
                     }))
                   }
-                >
-                  <option value="sentence">逐句</option>
-                  <option value="paragraph">整段</option>
-                </select>
+                />
               </label>
               <label className={styles.check}>
                 <input
@@ -427,22 +420,19 @@ export function SettingsDialog() {
               </label>
               <label>
                 全文总结模型
-                <select
+                <Select
                   value={draft.settings.summaryProfileId || ''}
-                  onChange={(e) =>
+                  options={[
+                    { value: '', label: '使用当前翻译模型' },
+                    ...draft.profiles.map((p) => ({ value: p.id, label: p.name }))
+                  ]}
+                  onChange={(value) =>
                     setDraft((d) => ({
                       ...d,
-                      settings: { ...d.settings, summaryProfileId: e.target.value || null }
+                      settings: { ...d.settings, summaryProfileId: value || null }
                     }))
                   }
-                >
-                  <option value="">使用当前翻译模型</option>
-                  {draft.profiles.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
             </>
           )}

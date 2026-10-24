@@ -6,6 +6,7 @@ import { useTranslateStore } from '../../stores/translateStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useUIStore } from '../../stores/uiStore'
 import { Icon } from '../Icon'
+import { Select } from '../Select/Select'
 import styles from './TranslatePane.module.css'
 export function TranslatePane() {
   const state = useTranslateStore(),
@@ -47,47 +48,47 @@ export function TranslatePane() {
           <ModeSwitch />
         </div>
         <div className={styles.tags}>
-          <span className={styles.model}>
-            <i
-              data-active={hasKey}
-              data-error={state.sentences.some((s) => s.status === 'error')}
-            />
-            <select
-              aria-label="当前模型"
-              value={config?.settings.activeProfileId || ''}
-              onChange={(e) => {
-                if (config)
-                  void useSettingsStore.getState().save({
-                    ...config,
-                    settings: { ...config.settings, activeProfileId: e.target.value }
-                  })
-              }}
-            >
-              {config?.profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.model || p.name}
-                </option>
-              ))}
-            </select>
-          </span>
-          <select
-            className={styles.preset}
-            aria-label="当前提示词"
-            value={config?.settings.activePresetId || ''}
-            onChange={(e) => {
+          <Select
+            variant="chip"
+            className={styles.model}
+            aria-label="当前模型"
+            prefix={
+              <i
+                data-active={hasKey}
+                data-error={state.sentences.some((s) => s.status === 'error')}
+              />
+            }
+            value={config?.settings.activeProfileId || ''}
+            options={(config?.profiles ?? []).map((p) => ({
+              value: p.id,
+              label: p.model || p.name
+            }))}
+            onChange={(value) => {
               if (config)
                 void useSettingsStore.getState().save({
                   ...config,
-                  settings: { ...config.settings, activePresetId: e.target.value }
+                  settings: { ...config.settings, activeProfileId: value }
                 })
             }}
-          >
-            {config?.presets.map((p) => (
-              <option key={p.id} value={p.id}>
-                提示词：{p.name}
-              </option>
-            ))}
-          </select>
+          />
+          <Select
+            variant="chip"
+            tone="accent"
+            className={styles.preset}
+            aria-label="当前提示词"
+            value={config?.settings.activePresetId || ''}
+            options={(config?.presets ?? []).map((p) => ({
+              value: p.id,
+              label: '提示词：' + p.name
+            }))}
+            onChange={(value) => {
+              if (config)
+                void useSettingsStore.getState().save({
+                  ...config,
+                  settings: { ...config.settings, activePresetId: value }
+                })
+            }}
+          />
           <span>已选 {state.sentences.length} 句</span>
         </div>
       </div>

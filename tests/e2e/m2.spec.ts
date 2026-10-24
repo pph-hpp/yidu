@@ -79,7 +79,7 @@ test.beforeEach(async ({}, info) => {
     await window.api.setSecret({ profileId: 'default', apiKey: 'test-only-key' })
   }, config)
   await page.reload()
-  await expect(page.getByLabel('当前模型')).toHaveValue('default')
+  await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
 })
 test.afterEach(async () => {
   await app?.close()

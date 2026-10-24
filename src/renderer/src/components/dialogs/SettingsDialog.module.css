@@ -28,7 +28,6 @@
   gap: var(--px-8);
 }
 .content input,
-.content select,
 .content textarea {
   font: inherit;
   color: var(--text-body);
@@ -39,8 +38,7 @@
   min-width: 0;
   width: 100%;
 }
-.content input,
-.content select {
+.content input {
   height: var(--px-40);
 }
 .content textarea {
@@ -64,7 +62,12 @@
 .row > button {
   flex: 0 0 auto;
   height: var(--px-40);
-  padding: 0 var(--px-12);
+  padding: 0 var(--px-14);
+  background: var(--bg-panel);
+  border: var(--px-1) solid var(--border-input);
+}
+.row > button:hover:enabled {
+  background: var(--bg-muted);
 }
 .connection,
 .snippet {

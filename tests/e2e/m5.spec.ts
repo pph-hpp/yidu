@@ -20,7 +20,7 @@ test.beforeEach(async ({}, info) => {
   await mkdir(profile, { recursive: true })
   app = await electron.launch({ args: ['.', '--user-data-dir=' + profile], env })
   page = await app.firstWindow()
-  await expect(page.getByLabel('当前模型')).toHaveValue('default')
+  await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
 })
 test.afterEach(async () => {
   if (app) await app.evaluate(({ app }) => app.exit(0)).catch(() => {})
@@ -139,7 +139,7 @@ test('A13/A14 两种尺寸、双主题、token 尺寸/对比度和对话框键�
       env
     })
     page = await app.firstWindow()
-    await expect(page.getByLabel('当前模型')).toHaveValue('default')
+    await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
     await open('reader.md')
     cdp = await page.context().newCDPSession(page)
     await app.evaluate(
@@ -154,7 +154,8 @@ test('A13/A14 两种尺寸、双主题、token 尺寸/对比度和对话框键�
       mobile: false
     })
     for (const theme of ['light', 'dark']) {
-      await page.getByLabel('界面主题').selectOption(theme)
+      await page.getByRole('combobox', { name: '界面主题' }).click()
+      await page.getByRole('option', { name: theme === 'light' ? '浅色' : '深色' }).click()
       await cdp.send('Emulation.setDeviceMetricsOverride', {
         width,
         height,

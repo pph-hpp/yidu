@@ -4,6 +4,7 @@ import { useSummaryStore, summaryKey } from '../../stores/summaryStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { Icon } from '../Icon'
 import { FileTabs } from '../FileTabs/FileTabs'
+import { Select } from '../Select/Select'
 import styles from './TopBar.module.css'
 export function TopBar({ openFile }: { openFile(): void }) {
   const theme = useTheme()
@@ -25,16 +26,18 @@ export function TopBar({ openFile }: { openFile(): void }) {
         <strong>译读</strong>
       </div>
       <FileTabs openFile={openFile} />
-      <select
+      <Select
+        variant="compact"
         aria-label="界面主题"
         title="界面主题"
         value={theme.theme}
-        onChange={(e) => theme.setTheme(e.target.value as typeof theme.theme)}
-      >
-        <option value="system">跟随系统</option>
-        <option value="light">浅色</option>
-        <option value="dark">深色</option>
-      </select>
+        onChange={theme.setTheme}
+        options={[
+          { value: 'system', label: '跟随系统' },
+          { value: 'light', label: '浅色' },
+          { value: 'dark', label: '深色' }
+        ]}
+      />
       <button
         className={styles.summary}
         disabled={!file}
