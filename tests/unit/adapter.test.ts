@@ -83,3 +83,11 @@ it('同模型并发 3、队列中的取消不会占用槽位', async () => {
   await Promise.all(occupied)
   expect(await q.run('p', c.signal, async () => 42)).toBe(42)
 })
+import { classifyHttpError } from '../../src/main/services/llm/adapter'
+it('HTTP 400 区分模型名无效、上下文限制和其他错误，不返回服务端原文', () => {
+  expect(classifyHttpError(400, 'The supported API model names are x, but you passed y')).toBe(
+    'MODEL_NOT_FOUND'
+  )
+  expect(classifyHttpError(400, 'context_length_exceeded')).toBe('CONTEXT_TOO_LONG')
+  expect(classifyHttpError(400, 'invalid temperature sk-private')).toBe('SERVER')
+})

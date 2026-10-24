@@ -1,19 +1,19 @@
 {
   "connection": {
-    "ok": false,
-    "code": "SERVER",
-    "message": "模型服务异常"
+    "ok": true,
+    "latencyMs": 817
   },
   "translations": [
-    "1复制重译编辑Static timing analysis checks timing constraints.模型服务异常重试",
-    "2复制重译编辑Positive slack indicates that a timing requirement is satisfied.模型服务异常重试"
+    "1复制重译编辑静态时序分析检查时序约束。Static timing analysis checks timing constraints.",
+    "2复制重译编辑正的时序裕量表示时序要求已满足。Positive slack indicates that a timing requirement is satisfied."
   ],
   "statuses": [
-    "error",
-    "error"
+    "done",
+    "done"
   ],
   "profileCount": 1,
-  "httpException": "仅用户批准的 API Base URL",
+  "protocol": "https:",
+  "httpException": "无（HTTPS）",
   "plaintextInConfig": false,
   "plaintextInSecrets": false
 }

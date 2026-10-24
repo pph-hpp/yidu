@@ -1,0 +1,15 @@
+{
+  "inputPages": 12,
+  "fixture": "Chen & Hott, arXiv:2106.03825v5 前 12 页节选（CC BY 4.0，非完整论文）",
+  "headings": [
+    "## 一句话概括",
+    "## 研究问题与动机",
+    "## 方法",
+    "## 实验与结论",
+    "## 关键术语",
+    "## 局限与可追问的问题"
+  ],
+  "saved": true,
+  "addedToPrompt": true,
+  "utf8NoBom": true
+}

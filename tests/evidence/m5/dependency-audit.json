@@ -1,0 +1,241 @@
+{
+  "checkedAt": "2026-10-24",
+  "allDependencies": {
+    "info": 0,
+    "low": 2,
+    "moderate": 4,
+    "high": 14,
+    "critical": 3,
+    "total": 23
+  },
+  "productionOnly": {
+    "info": 0,
+    "low": 2,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 2
+  },
+  "electronIsShippedDespiteDevDependency": true,
+  "majorVersionsKeptPerDesign": true,
+  "packages": [
+    {
+      "name": "@electron/rebuild",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@vitest/mocker",
+      "severity": "moderate",
+      "direct": false,
+      "fix": {
+        "name": "vitest",
+        "version": "5.0.5",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@vscode/markdown-it-katex",
+      "severity": "low",
+      "direct": true,
+      "fix": false
+    },
+    {
+      "name": "app-builder-lib",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "builder-util",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "builder-util-runtime",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "cacache",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "dmg-builder",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "electron",
+      "severity": "high",
+      "direct": true,
+      "fix": {
+        "name": "electron",
+        "version": "45.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "electron-builder",
+      "severity": "high",
+      "direct": true,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "electron-builder-squirrel-windows",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "electron-publish",
+      "severity": "high",
+      "direct": false,
+      "fix": true
+    },
+    {
+      "name": "electron-vite",
+      "severity": "moderate",
+      "direct": true,
+      "fix": {
+        "name": "electron-vite",
+        "version": "6.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "esbuild",
+      "severity": "moderate",
+      "direct": false,
+      "fix": {
+        "name": "vite",
+        "version": "8.3.5",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "extract-zip",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron",
+        "version": "45.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "katex",
+      "severity": "low",
+      "direct": true,
+      "fix": false
+    },
+    {
+      "name": "make-fetch-happen",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "node-gyp",
+      "severity": "high",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "tar",
+      "severity": "critical",
+      "direct": false,
+      "fix": {
+        "name": "electron-builder",
+        "version": "26.18.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "tinypool",
+      "severity": "critical",
+      "direct": false,
+      "fix": {
+        "name": "vitest",
+        "version": "5.0.5",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "vite",
+      "severity": "high",
+      "direct": true,
+      "fix": {
+        "name": "vite",
+        "version": "8.3.5",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "vite-node",
+      "severity": "moderate",
+      "direct": false,
+      "fix": {
+        "name": "vitest",
+        "version": "5.0.5",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "vitest",
+      "severity": "critical",
+      "direct": true,
+      "fix": {
+        "name": "vitest",
+        "version": "5.0.5",
+        "isSemVerMajor": true
+      }
+    }
+  ]
+}

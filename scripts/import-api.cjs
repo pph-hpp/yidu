@@ -17,13 +17,15 @@ app.whenReady().then(() => {
       .map((s) => s.trim())
       .filter(Boolean)
     const urlLine = lines.find((s) => /^url\s*[:：=]/i.test(s))
-    const modelLine = lines.find((s) => /^model\s*[:：=]/i.test(s))
+    const modelLine = lines.find((s) => /^model(?:[_ -]?name)?\s*[:：=]/i.test(s))
     const keyLine = lines.find((s) => s !== urlLine && s !== modelLine)
     let url = urlLine?.replace(/^url\s*[:：=]\s*/i, '').trim(),
-      model = modelLine?.replace(/^model\s*[:：=]\s*/i, '').trim(),
+      model = modelLine?.replace(/^model(?:[_ -]?name)?\s*[:：=]\s*/i, '').trim(),
       key = keyLine?.replace(/^(?:api[_ -]?key|key)\s*[:：=]\s*/i, '').trim()
     if (!url || !model || !key || !['https:', 'http:'].includes(new URL(url).protocol))
       throw new Error('API 配置格式无效')
+    const modelOverride = process.argv.find((a) => a.startsWith('--model='))?.slice(8)
+    if (modelOverride) model = modelOverride
     const parsed = new URL(url)
     if (parsed.username || parsed.password || parsed.hash) throw new Error('URL 无效')
     if (parsed.pathname === '/') url = parsed.origin + '/v1'
@@ -34,6 +36,11 @@ app.whenReady().then(() => {
         JSON.stringify({ urls: [url] })
       )
     }
+    if (parsed.protocol === 'https:')
+      fs.writeFileSync(
+        require('path').join(app.getPath('userData'), 'http-exceptions.json'),
+        JSON.stringify({ urls: [] })
+      )
     const secrets = new Store({ name: 'secrets', defaults: { keys: {} } })
     const config = new Store({ name: 'config' })
     const data = config.store

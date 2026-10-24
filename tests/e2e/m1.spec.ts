@@ -37,6 +37,9 @@ async function openFixture(name: string) {
   await app.evaluate(({ dialog }, path) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] })
   }, path)
+  // 原生菜单快捷键要求测试窗口拥有焦点。
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus())
+  await page.bringToFront()
   await page.keyboard.press('Control+o')
   await expect(page.getByRole('tab', { name, exact: true })).toHaveAttribute(
     'aria-selected',
@@ -181,6 +184,9 @@ for (const fixture of ['paper-100.pdf', 'chen-hott-100.pdf'])
       resolve('tests/fixtures', fixture)
     )
     const start = performance.now()
+    // 原生菜单快捷键要求测试窗口拥有焦点。
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus())
+    await page.bringToFront()
     await page.keyboard.press('Control+o')
     await page.locator('[data-page="1"][data-ready=true]').waitFor()
     const firstPageMs = performance.now() - start

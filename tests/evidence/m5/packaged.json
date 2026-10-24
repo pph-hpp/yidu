@@ -1,0 +1,22 @@
+{
+  "executable": "dist/win-unpacked/译读.exe",
+  "fuses": {
+    "RunAsNode": false,
+    "EnableNodeOptionsEnvironmentVariable": false,
+    "EnableNodeCliInspectArguments": false,
+    "OnlyLoadAppFromAsar": true
+  },
+  "boundary": {
+    "require": false,
+    "process": false,
+    "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'",
+    "scheme": "file:"
+  },
+  "secretsExcludedFromAsar": true,
+  "chineseFontBundled": true,
+  "argvFileOpened": true,
+  "fourAnnotationsRead": true,
+  "chineseNoteReadAndSaved": true,
+  "settingsOpened": true,
+  "installerExecuted": false
+}

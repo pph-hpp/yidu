@@ -24,7 +24,8 @@ async function launch() {
       'scripts/import-api.cjs',
       path.resolve('api.txt'),
       '--allow-this-http',
-      '--user-data-dir=' + profile
+      '--user-data-dir=' + profile,
+      ...process.argv.slice(2).filter((a) => a.startsWith('--model='))
     ],
     { env, encoding: 'utf8', windowsHide: true }
   )
@@ -40,7 +41,10 @@ async function launch() {
       const cfg = await window.api.getConfig()
       cfg.presets[0].systemPrompt += '\nslack 译为时序裕量。'
       await window.api.setConfig(cfg)
-      return { profileCount: cfg.profiles.length }
+      return {
+        profileCount: cfg.profiles.length,
+        protocol: new URL(cfg.profiles[0].baseUrl).protocol
+      }
     })
     await page.reload()
     await page.getByLabel('当前模型').waitFor()
@@ -75,7 +79,7 @@ async function launch() {
       translations,
       statuses,
       ...config,
-      httpException: '仅用户批准的 API Base URL',
+      httpException: config.protocol === 'http:' ? '仅用户批准的 API Base URL' : '无（HTTPS）',
       plaintextInConfig: fs.readFileSync(path.join(profile, 'config.json'), 'utf8').includes(key),
       plaintextInSecrets: fs.readFileSync(path.join(profile, 'secrets.json'), 'utf8').includes(key)
     }

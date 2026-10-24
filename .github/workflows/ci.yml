@@ -1,4 +1,4 @@
-name: M1 检查
+name: 译读检查
 on: [push, pull_request]
 jobs:
   verify:

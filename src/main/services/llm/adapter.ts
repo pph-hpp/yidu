@@ -42,6 +42,45 @@ export class LLMError extends Error {
     super(messages[code])
   }
 }
+export function classifyHttpError(status: number, body: string): ErrorCode {
+  if (status === 401 || status === 403) return 'AUTH'
+  if (status === 404) return 'MODEL_NOT_FOUND'
+  if (status === 429) return 'RATE_LIMIT'
+  if (status === 413) return 'CONTEXT_TOO_LONG'
+  if (status === 400) {
+    if (
+      /context[_ ]?(length|window)|maximum context|too many tokens|token[^\n]{0,30}(limit|exceed)/i.test(
+        body
+      )
+    )
+      return 'CONTEXT_TOO_LONG'
+    if (/model|deployment/i.test(body) && /invalid|not|supported|exist/i.test(body))
+      return 'MODEL_NOT_FOUND'
+  }
+  return 'SERVER'
+}
+async function responseError(res: Response): Promise<LLMError> {
+  let body = ''
+  const reader = res.body?.getReader()
+  if (reader) {
+    try {
+      const decoder = new TextDecoder()
+      let bytes = 0
+      while (bytes < 16384) {
+        const { done, value } = await reader.read()
+        if (done) break
+        bytes += value.byteLength
+        body += decoder.decode(value.subarray(0, Math.max(0, 16384 - (bytes - value.byteLength))), {
+          stream: true
+        })
+      }
+    } catch {
+    } finally {
+      await reader.cancel().catch(() => {})
+    }
+  }
+  return new LLMError(classifyHttpError(res.status, body))
+}
 export function requestSpec(
   profile: ModelProfile,
   key: string,
@@ -87,22 +126,7 @@ export class FetchAdapter implements LLMAdapter {
         signal: controller.signal,
         redirect: 'error'
       })
-      if (!res.ok) {
-        await res.body?.cancel()
-        throw new LLMError(
-          res.status === 401 || res.status === 403
-            ? 'AUTH'
-            : res.status === 404
-              ? 'MODEL_NOT_FOUND'
-              : res.status === 429
-                ? 'RATE_LIMIT'
-                : res.status >= 500
-                  ? 'SERVER'
-                  : res.status === 413 || res.status === 400
-                    ? 'CONTEXT_TOO_LONG'
-                    : 'SERVER'
-        )
-      }
+      if (!res.ok) throw await responseError(res)
       if (!res.body) throw new LLMError('SERVER')
       let completed = false
       for await (const data of readSSE(res.body)) {
@@ -151,22 +175,7 @@ export class FetchAdapter implements LLMAdapter {
         signal: controller.signal,
         redirect: 'error'
       })
-      if (!res.ok) {
-        await res.body?.cancel()
-        throw new LLMError(
-          res.status === 401 || res.status === 403
-            ? 'AUTH'
-            : res.status === 404
-              ? 'MODEL_NOT_FOUND'
-              : res.status === 429
-                ? 'RATE_LIMIT'
-                : res.status >= 500
-                  ? 'SERVER'
-                  : res.status === 400 || res.status === 413
-                    ? 'CONTEXT_TOO_LONG'
-                    : 'SERVER'
-        )
-      }
+      if (!res.ok) throw await responseError(res)
       const body = await res.json()
       const text =
         this.profile.provider === 'anthropic'
