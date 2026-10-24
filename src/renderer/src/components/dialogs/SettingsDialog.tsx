@@ -365,7 +365,7 @@ export function SettingsDialog() {
                           })
                         }
                       />
-                      {s.source} 的总结
+                      {s.source.split(/[\\/]/).at(-1)} 的总结
                     </label>
                     <details>
                       <summary>查看背景</summary>

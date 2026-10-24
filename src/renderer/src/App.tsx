@@ -1,3 +1,6 @@
+import { bindSummaryEvents } from './stores/summaryStore'
+import { SummaryProgressDialog } from './components/dialogs/SummaryProgressDialog'
+import { AddToPromptDialog } from './components/dialogs/AddToPromptDialog'
 import { useCallback, useEffect, useState } from 'react'
 import { useDocStore } from './stores/docStore'
 import { useSettingsStore } from './stores/settingsStore'
@@ -25,7 +28,12 @@ export function App() {
           .getState()
           .setMode(useSettingsStore.getState().config!.settings.defaultMode)
       )
-    return bindTranslationEvents()
+    const offTranslation = bindTranslationEvents(),
+      offSummary = bindSummaryEvents()
+    return () => {
+      offTranslation()
+      offSummary()
+    }
   }, [])
   const toast = useUIStore((s) => s.toast)
   const [opening, setOpening] = useState(false),
@@ -74,6 +82,8 @@ export function App() {
         <TranslatePane />
       </div>
       <StatusBar />
+      <SummaryProgressDialog />
+      <AddToPromptDialog />
       {settings.opened && settings.config && <SettingsDialog />}
       {toast && (
         <div className={styles.toast} role="status">

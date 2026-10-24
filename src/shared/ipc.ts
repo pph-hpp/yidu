@@ -1,3 +1,4 @@
+import type { SummaryRequest, SummaryProgress, SummaryResult } from './summary'
 import type { AppConfig } from './config'
 import type {
   TranslateRequest,
@@ -36,6 +37,14 @@ export interface OpenPathRequest {
 }
 // Expose individual validated operations, never generic IPC.
 export interface YiduAPI {
+  startSummary(req: SummaryRequest): Promise<void>
+  cancelSummary(req: { jobId: string }): Promise<void>
+  saveSummary(req: {
+    markdown: string
+    defaultName: string
+  }): Promise<{ ok: boolean; path?: string }>
+  onSummaryProgress(callback: (event: SummaryProgress) => void): () => void
+  onSummaryResult(callback: (event: SummaryResult) => void): () => void
   getConfig(): Promise<AppConfig>
   setConfig(patch: Partial<AppConfig>): Promise<AppConfig>
   setSecret(req: { profileId: string; apiKey: string }): Promise<void>

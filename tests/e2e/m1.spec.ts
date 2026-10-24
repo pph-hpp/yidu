@@ -70,16 +70,21 @@ test('安全边界、标签与打开失败', async () => {
     node: false,
     process: false,
     keys: [
+      'cancelSummary',
       'cancelTranslation',
       'getConfig',
       'hasSecret',
+      'onSummaryProgress',
+      'onSummaryResult',
       'onTranslationDelta',
       'onTranslationDone',
       'onTranslationError',
       'openFile',
       'openPath',
+      'saveSummary',
       'setConfig',
       'setSecret',
+      'startSummary',
       'testConnection',
       'translate'
     ]

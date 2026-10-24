@@ -1,3 +1,7 @@
+import { SummaryService } from './services/summary.service'
+import { writeFile } from 'node:fs/promises'
+import { basename, dirname, join } from 'node:path'
+import { stringField } from '../shared/config'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { IPC } from '../shared/ipc'
 import { ConfigService } from './services/config.service'
@@ -10,6 +14,7 @@ export function registerIPC(win: BrowserWindow, appUrl: string): void {
   const config = new ConfigService(),
     secrets = new SecretService(),
     llm = new LLMService(config, secrets)
+  const summary = new SummaryService(llm, files)
   const payload = (arg: unknown): Record<string, unknown> => {
     if (!arg || typeof arg !== 'object' || Array.isArray(arg)) throw new Error('参数格式错误')
     return arg as Record<string, unknown>
@@ -17,7 +22,10 @@ export function registerIPC(win: BrowserWindow, appUrl: string): void {
   const send = (channel: string, arg: unknown) => {
     if (!win.isDestroyed()) win.webContents.send(channel, arg)
   }
-  win.on('closed', () => llm.cancelAll())
+  win.on('closed', () => {
+    llm.cancelAll()
+    summary.cancelAll()
+  })
   const handle = (channel: string, run: (arg: unknown) => Promise<unknown>) => {
     ipcMain.removeHandler(channel)
     ipcMain.handle(channel, (event, arg: unknown) => {
@@ -41,6 +49,31 @@ export function registerIPC(win: BrowserWindow, appUrl: string): void {
     return result.canceled ? null : files.openPath({ path: result.filePaths[0] })
   })
   handle(IPC.FILE_OPEN_PATH, (arg) => files.openPath(arg))
+  handle(IPC.SUMMARY_START, async (arg) =>
+    summary.start(
+      arg,
+      (p) => send(IPC.SUMMARY_PROGRESS, p),
+      (r) => send(IPC.SUMMARY_RESULT, r)
+    )
+  )
+  handle(IPC.SUMMARY_CANCEL, async (arg) => summary.cancel(payload(arg).jobId))
+  handle(IPC.SUMMARY_SAVE, async (arg) => {
+    const p = payload(arg)
+    stringField(p.markdown, 5000000)
+    stringField(p.defaultName, 512)
+    const name = basename(p.defaultName).replace(/[<>:"|?*]/g, '_')
+    const result = await dialog.showSaveDialog(win, {
+      title: '保存全文总结',
+      defaultPath: join(
+        summary.lastSourcePath ? dirname(summary.lastSourcePath) : '.',
+        name.endsWith('.md') ? name : name + '.md'
+      ),
+      filters: [{ name: 'Markdown', extensions: ['md'] }]
+    })
+    if (result.canceled || !result.filePath) return { ok: false }
+    await writeFile(result.filePath, p.markdown, 'utf8')
+    return { ok: true, path: result.filePath }
+  })
   handle(IPC.CONFIG_GET, async () => config.get())
   handle(IPC.CONFIG_SET, async (arg) => config.set(arg))
   handle(IPC.SECRET_SET, async (arg) => {

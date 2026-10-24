@@ -16,7 +16,7 @@ export function Modal({
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
-    ref.current?.querySelector<HTMLElement>('button,input,textarea,select')?.focus()
+    ref.current?.querySelector<HTMLElement>('button,input,textarea,select,summary')?.focus()
     return () => previous?.focus()
   }, [])
   return (
@@ -40,7 +40,7 @@ export function Modal({
           if (e.key === 'Tab') {
             const items = [
               ...ref.current!.querySelectorAll<HTMLElement>(
-                'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),[tabindex="0"]'
+                'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),summary,[tabindex="0"]'
               )
             ].filter((el) => el.getClientRects().length)
             const first = items[0],

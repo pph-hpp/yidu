@@ -1,0 +1,107 @@
+.content {
+  padding: var(--px-24);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--px-16);
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--px-12);
+  font-size: var(--px-13);
+  color: var(--text-secondary);
+}
+.filename {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.progress {
+  height: var(--px-6);
+  border-radius: var(--px-3);
+  background: var(--border-soft);
+  overflow: hidden;
+}
+.progress > div {
+  height: 100%;
+  background: var(--accent);
+}
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--px-12);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: var(--px-10);
+  color: var(--text-secondary);
+}
+.steps i {
+  width: var(--px-16);
+  height: var(--px-16);
+  border: var(--px-1) solid var(--border-input);
+  border-radius: 50%;
+}
+.steps [data-current='true'] {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.steps [data-done='true'] i {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.preview {
+  max-height: var(--px-240);
+  overflow: auto;
+  font-size: var(--px-13);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.snippetPreview {
+  max-height: var(--px-120);
+  border: var(--px-1) solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: var(--px-12);
+  white-space: pre-wrap;
+  overflow: auto;
+  font-size: var(--px-13);
+  line-height: 1.7;
+}
+.path {
+  display: flex;
+  gap: var(--px-8);
+  background: var(--bg-muted);
+  border-radius: var(--radius);
+  padding: var(--px-10);
+  font-size: var(--px-12);
+}
+.path span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.path button {
+  color: var(--accent);
+}
+.check {
+  display: flex;
+  align-items: start;
+  gap: var(--px-8);
+  font-size: var(--px-13);
+}
+.error {
+  color: var(--danger);
+  font-size: var(--px-13);
+}
+.content p {
+  margin: 0;
+}
+.danger {
+  color: var(--danger);
+}

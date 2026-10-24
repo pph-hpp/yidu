@@ -40,15 +40,13 @@ export const useTranslateStore = create<TranslateState>((set, get) => ({
       index += p.length
       return start
     })
-    const sentences = paragraphs
-      .flat()
-      .map((source, i) => ({
-        id: requestId + ':' + i,
-        index: i + 1,
-        source,
-        target: '',
-        status: 'pending' as const
-      }))
+    const sentences = paragraphs.flat().map((source, i) => ({
+      id: requestId + ':' + i,
+      index: i + 1,
+      source,
+      target: '',
+      status: 'pending' as const
+    }))
     set({ requestId, rawSelection, sentences, paragraphStarts })
     if (typeof window !== 'undefined' && window.api)
       void send(sentences, requestId, force, 0, waitMs)
@@ -138,7 +136,10 @@ function onError(e: { requestId: string; code: string; message: string; sentence
   if (!batch) return
   batches.delete(e.requestId)
   const failed = e.sentenceIds || batch.ids
-  const retry = ['NETWORK', 'TIMEOUT'].includes(e.code) && batch.attempt < 2 && useTranslateStore.getState().sentences.some(s=>batch.ids.includes(s.id)&&s.target)
+  const retry =
+    ['NETWORK', 'TIMEOUT'].includes(e.code) &&
+    batch.attempt < 2 &&
+    useTranslateStore.getState().sentences.some((s) => batch.ids.includes(s.id) && s.target)
   useTranslateStore.setState((s) => ({
     sentences: s.sentences.map((v) =>
       batch.ids.includes(v.id)
@@ -203,5 +204,3 @@ export function bindTranslationEvents(): () => void {
     cancelBatches()
   }
 }
-
-
