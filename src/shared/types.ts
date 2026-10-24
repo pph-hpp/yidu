@@ -1,3 +1,4 @@
+import type { MtEngineId } from './mt'
 export type DocKind = 'pdf' | 'md'
 export interface OpenedFile {
   fileId: string
@@ -51,6 +52,7 @@ export interface PromptPreset {
   systemPrompt: string
   snippets: ContextSnippet[]
 }
+export type Translator = { kind: 'llm' } | { kind: 'mt'; engineId: MtEngineId }
 export interface AppSettings {
   activeProfileId: string | null
   activePresetId: string | null
@@ -60,6 +62,10 @@ export interface AppSettings {
   autoTranslateOnSelect: boolean
   rightPaneWidth: number
   zoom: number
+  /** 翻译使用的引擎；kind 为 'llm' 时使用 activeProfileId */
+  translator: Translator
+  /** 大模型请求失败时改用 microsoft-free */
+  llmFallbackToMt: boolean
 }
 export type Quad = [number, number, number, number, number, number, number, number]
 export type AnnotBase = { id: string; page: number; createdAt: string }

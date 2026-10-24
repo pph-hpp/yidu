@@ -1,9 +1,19 @@
-import type { AppSettings, ModelProfile, PromptPreset, RecentFile } from './types'
+import type { AppSettings, ModelProfile, PromptPreset, RecentFile, Translator } from './types'
+import { DEFAULT_MT_ENGINE, isMtEngineId, type MtEngineId } from './mt'
+export interface MtConfig {
+  /** 有道「应用 ID」，非机密 */
+  youdaoAppKey: string
+  /** 已确认过隐私提示的引擎 */
+  privacyAcked: MtEngineId[]
+  /** 已关闭翻译栏底部的免费引擎提示 */
+  hideFreeHint: boolean
+}
 export interface AppConfig {
   settings: AppSettings
   profiles: ModelProfile[]
   presets: PromptPreset[]
   recent: RecentFile[]
+  mt: MtConfig
 }
 export const DEFAULT_PROMPT =
   '你是专业的学术论文译者。请将英文学术文本翻译为准确、通顺、符合中文学术习惯的简体中文。\n- 术语使用学科内通用译法，专有缩写首次出现时保留英文，如“卷积神经网络（CNN）”。\n- 保持原文的逻辑关系和语气，不增删信息。'
@@ -27,7 +37,9 @@ export function defaultConfig(): AppConfig {
       defaultMode: 'sentence',
       autoTranslateOnSelect: true,
       rightPaneWidth: 420,
-      zoom: 1
+      zoom: 1,
+      translator: { kind: 'mt', engineId: DEFAULT_MT_ENGINE },
+      llmFallbackToMt: false
     },
     profiles: [
       {
@@ -41,8 +53,52 @@ export function defaultConfig(): AppConfig {
       }
     ],
     presets: [{ id: 'academic', name: '通用学术', systemPrompt: DEFAULT_PROMPT, snippets: [] }],
-    recent: []
+    recent: [],
+    mt: { youdaoAppKey: '', privacyAcked: [], hideFreeHint: false }
   }
+}
+export function isLocalUrl(baseUrl: string): boolean {
+  try {
+    return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseUrl).hostname)
+  } catch {
+    return false
+  }
+}
+function validTranslator(value: unknown): value is Translator {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const t = value as Record<string, unknown>,
+    keys = Object.keys(t).sort().join()
+  return t.kind === 'llm'
+    ? keys === 'kind'
+    : t.kind === 'mt' && keys === 'engineId,kind' && isMtEngineId(t.engineId)
+}
+/**
+ * 读取已保存配置时补齐 / 修正机器翻译相关字段（设计文档 8.6）。
+ * 旧配置没有 translator：当前大模型可用 → llm，否则 → 微软免费；非法值回退到微软免费。
+ */
+export function migrateConfig(raw: AppConfig, hasKey: (profileId: string) => boolean): AppConfig {
+  const config = structuredClone(raw) as AppConfig & Record<string, unknown>,
+    settings = config.settings as AppSettings & Record<string, unknown>
+  if (!validTranslator(settings.translator)) {
+    const profile = config.profiles?.find((p) => p.id === settings.activeProfileId)
+    settings.translator =
+      settings.translator === undefined &&
+      profile?.model &&
+      (isLocalUrl(profile.baseUrl) || hasKey(profile.id))
+        ? { kind: 'llm' }
+        : { kind: 'mt', engineId: DEFAULT_MT_ENGINE }
+  }
+  if (typeof settings.llmFallbackToMt !== 'boolean') settings.llmFallbackToMt = false
+  const mt = (config.mt && typeof config.mt === 'object' ? config.mt : {}) as Partial<MtConfig>
+  config.mt = {
+    youdaoAppKey:
+      typeof mt.youdaoAppKey === 'string' && mt.youdaoAppKey.length <= 200 ? mt.youdaoAppKey : '',
+    privacyAcked: Array.isArray(mt.privacyAcked)
+      ? [...new Set(mt.privacyAcked.filter(isMtEngineId))]
+      : [],
+    hideFreeHint: mt.hideFreeHint === true
+  }
+  return config
 }
 function record(value: unknown): asserts value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('参数格式错误')
@@ -121,7 +177,9 @@ export function validateConfig(
   approvedHttp: readonly string[] = []
 ): asserts value is AppConfig {
   record(value)
-  if (Object.keys(value).some((k) => !['settings', 'profiles', 'presets', 'recent'].includes(k)))
+  if (
+    Object.keys(value).some((k) => !['settings', 'profiles', 'presets', 'recent', 'mt'].includes(k))
+  )
     throw new Error('配置包含未知字段')
   if (!Array.isArray(value.profiles) || !value.profiles.length || value.profiles.length > 100)
     throw new Error('至少保留一个模型')
@@ -164,11 +222,15 @@ export function validateConfig(
           'defaultMode',
           'autoTranslateOnSelect',
           'rightPaneWidth',
-          'zoom'
+          'zoom',
+          'translator',
+          'llmFallbackToMt'
         ].includes(k)
     )
   )
     throw new Error('偏好字段无效')
+  if (!validTranslator(s.translator) || typeof s.llmFallbackToMt !== 'boolean')
+    throw new Error('翻译引擎设置无效')
   if (
     s.targetLang !== 'zh-CN' ||
     !['sentence', 'paragraph'].includes(s.defaultMode as string) ||
@@ -190,6 +252,17 @@ export function validateConfig(
     if (s[k] !== null && !value.profiles.some((p) => p.id === s[k])) throw new Error('模型不存在')
   if (s.activePresetId !== null && !value.presets.some((p) => p.id === s.activePresetId))
     throw new Error('预设不存在')
+  const mt = value.mt
+  record(mt)
+  if (
+    Object.keys(mt).some((k) => !['youdaoAppKey', 'privacyAcked', 'hideFreeHint'].includes(k)) ||
+    typeof mt.hideFreeHint !== 'boolean' ||
+    !Array.isArray(mt.privacyAcked) ||
+    !mt.privacyAcked.every(isMtEngineId) ||
+    new Set(mt.privacyAcked).size !== mt.privacyAcked.length
+  )
+    throw new Error('翻译引擎配置无效')
+  stringField(mt.youdaoAppKey, 200)
   if (!Array.isArray(value.recent) || value.recent.length > 10) throw new Error('最近文件无效')
   for (const f of value.recent) {
     record(f)

@@ -88,7 +88,9 @@ test('安全边界、标签与打开失败', async () => {
       'onTranslationError',
       'openFile',
       'openPath',
+      'readClipboard',
       'recentFiles',
+      'revealSecret',
       'savePdf',
       'savePdfAs',
       'saveSummary',
@@ -96,6 +98,7 @@ test('安全边界、标签与打开失败', async () => {
       'setSecret',
       'startSummary',
       'testConnection',
+      'testMtEngine',
       'translate'
     ]
   })

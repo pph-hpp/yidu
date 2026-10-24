@@ -1,6 +1,5 @@
 import { createStore, get, set, del, entries } from 'idb-keyval'
-import { buildPrompt } from '../../../shared/config'
-import type { ModelProfile, PromptPreset } from '../../../shared/types'
+import { buildPrompt, type AppConfig } from '../../../shared/config'
 const store = createStore('yidu-translations', 'sentences')
 interface Entry {
   target: string
@@ -10,14 +9,20 @@ export async function sha256(value: string): Promise<string> {
   const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
   return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
-export async function cacheKey(
-  source: string,
-  profile: ModelProfile,
-  preset: PromptPreset
-): Promise<string> {
-  return sha256(
-    source + '\0' + profile.id + profile.model + '\0' + (await sha256(buildPrompt(preset)))
-  )
+/**
+ * 当前翻译引擎的缓存标识（设计文档 7.6）：大模型含模型与提示词哈希，机器翻译只含引擎 id，
+ * 切换引擎后不会命中其他引擎的译文。返回空字符串表示不使用缓存。
+ */
+export async function engineTag(config: AppConfig): Promise<string> {
+  const { translator, activeProfileId, activePresetId } = config.settings
+  if (translator.kind === 'mt') return 'mt:' + translator.engineId
+  const profile = config.profiles.find((p) => p.id === activeProfileId),
+    preset = config.presets.find((p) => p.id === activePresetId) || config.presets[0]
+  if (!profile) return ''
+  return 'llm:' + profile.id + profile.model + '\0' + (await sha256(buildPrompt(preset)))
+}
+export async function cacheKey(source: string, tag: string): Promise<string> {
+  return sha256(source + '\0' + tag)
 }
 export async function cacheGet(key: string): Promise<string | undefined> {
   try {

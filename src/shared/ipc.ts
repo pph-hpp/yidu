@@ -5,8 +5,10 @@ import type {
   TranslateRequest,
   TranslationDelta,
   TranslationError,
+  TranslationDone,
   ConnectionResult
 } from './translation'
+import type { MtEngineId } from './mt'
 import type { ModelProfile } from './types'
 import type { OpenedFile, RecentFile } from './types'
 export const IPC = {
@@ -21,6 +23,8 @@ export const IPC = {
   LLM_DONE: 'llm:done',
   LLM_ERROR: 'llm:error',
   LLM_TEST: 'llm:test',
+  MT_TEST: 'mt:test',
+  CLIPBOARD_READ: 'clipboard:read',
   SUMMARY_START: 'summary:start',
   SUMMARY_PROGRESS: 'summary:progress',
   SUMMARY_RESULT: 'summary:result',
@@ -60,10 +64,17 @@ export interface YiduAPI {
   hasSecret(req: { profileId: string }): Promise<boolean>
   revealSecret(req: { profileId: string }): Promise<string>
   testConnection(req: { profile: ModelProfile }): Promise<ConnectionResult>
+  testMtEngine(req: {
+    engineId: MtEngineId
+    appKey?: string
+    appSecret?: string
+  }): Promise<ConnectionResult>
+  /** 只允许在用户点击「从剪贴板识别」后调用 */
+  readClipboard(): Promise<string>
   translate(req: TranslateRequest): Promise<void>
   cancelTranslation(req: { requestId: string }): Promise<void>
   onTranslationDelta(callback: (event: TranslationDelta) => void): () => void
-  onTranslationDone(callback: (event: { requestId: string }) => void): () => void
+  onTranslationDone(callback: (event: TranslationDone) => void): () => void
   onTranslationError(callback: (event: TranslationError) => void): () => void
   openFile(): Promise<OpenedFile | null>
   openPath(req: OpenPathRequest): Promise<OpenedFile>

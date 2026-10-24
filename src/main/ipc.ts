@@ -2,7 +2,7 @@ import { SummaryService } from './services/summary.service'
 import { writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { stringField } from '../shared/config'
-import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { BrowserWindow, clipboard, dialog, ipcMain } from 'electron'
 import { IPC } from '../shared/ipc'
 import { ConfigService } from './services/config.service'
 import { SecretService } from './services/secret.service'
@@ -15,8 +15,8 @@ export function registerIPC(
   closeConfirmed: () => void = () => win.close()
 ): void {
   const files = new FileService()
-  const config = new ConfigService(),
-    secrets = new SecretService(),
+  const secrets = new SecretService(),
+    config = new ConfigService((id) => secrets.has(id)),
     llm = new LLMService(config, secrets)
   const summary = new SummaryService(llm, files)
   const payload = (arg: unknown): Record<string, unknown> => {
@@ -155,6 +155,11 @@ export function registerIPC(
   handle(IPC.SECRET_HAS, async (arg) => secrets.has(payload(arg).profileId))
   handle(IPC.SECRET_REVEAL, async (arg) => secrets.reveal(payload(arg).profileId))
   handle(IPC.LLM_TEST, async (arg) => llm.test(payload(arg).profile))
+  handle(IPC.MT_TEST, async (arg) => llm.mt.test(arg))
+  handle(IPC.CLIPBOARD_READ, async (arg) => {
+    if (arg !== undefined) throw new Error('剪贴板读取不接受参数')
+    return clipboard.readText().slice(0, 10000)
+  })
   handle(IPC.LLM_CANCEL, async (arg) => llm.cancel(payload(arg).requestId))
   handle(IPC.LLM_TRANSLATE, async (arg) => {
     validateTranslate(arg)
@@ -162,7 +167,7 @@ export function registerIPC(
       .translate(
         arg,
         (e) => send(IPC.LLM_DELTA, e),
-        (requestId) => send(IPC.LLM_DONE, { requestId }),
+        (requestId, info) => send(IPC.LLM_DONE, { requestId, ...info }),
         (e) => send(IPC.LLM_ERROR, e)
       )
       .catch(() =>

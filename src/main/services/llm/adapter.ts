@@ -27,6 +27,8 @@ export type ErrorCode =
   | 'NETWORK'
   | 'TIMEOUT'
   | 'SERVER'
+  | 'ENGINE_UNAVAILABLE'
+  | 'QUOTA'
 const messages: Record<ErrorCode, string> = {
   NO_PROFILE: '还没有配置翻译模型',
   AUTH: 'API Key 无效或无权限',
@@ -35,11 +37,16 @@ const messages: Record<ErrorCode, string> = {
   CONTEXT_TOO_LONG: '选区太长',
   NETWORK: '网络连接失败',
   TIMEOUT: '网络连接失败（超时）',
-  SERVER: '模型服务异常'
+  SERVER: '模型服务异常',
+  ENGINE_UNAVAILABLE: '翻译引擎暂时不可用',
+  QUOTA: '账户余额不足'
 }
 export class LLMError extends Error {
-  constructor(public code: ErrorCode) {
-    super(messages[code])
+  constructor(
+    public code: ErrorCode,
+    message?: string
+  ) {
+    super(message ?? messages[code])
   }
 }
 export function classifyHttpError(status: number, body: string): ErrorCode {

@@ -12,6 +12,8 @@ import { StreamParser } from './streamParser'
 import { ProfileQueue, delay } from './queue'
 import type { ConfigService } from '../config.service'
 import type { SecretService } from '../secret.service'
+import { MtService } from '../mt/mt.service'
+import { DEFAULT_MT_ENGINE, type MtEngineId } from '../../../shared/mt'
 export function validateTranslate(value: unknown): asserts value is TranslateRequest {
   if (!value || typeof value !== 'object') throw new Error('翻译参数无效')
   const v = value as TranslateRequest
@@ -31,11 +33,14 @@ export function validateTranslate(value: unknown): asserts value is TranslateReq
 }
 export class LLMService {
   readonly queue = new ProfileQueue()
+  readonly mt: MtService
   private requests = new Map<string, AbortController>()
   constructor(
     readonly config: ConfigService,
     readonly secrets: SecretService
-  ) {}
+  ) {
+    this.mt = new MtService(config, secrets)
+  }
   profile(id?: string | null): ModelProfile {
     const cfg = this.config.get(),
       profile = cfg.profiles.find((p) => p.id === (id || cfg.settings.activeProfileId))
@@ -90,7 +95,7 @@ export class LLMService {
   async translate(
     value: unknown,
     delta: (d: TranslationDelta) => void,
-    done: (id: string) => void,
+    done: (id: string, info?: { fallback?: MtEngineId }) => void,
     fail: (e: TranslationError) => void
   ): Promise<void> {
     validateTranslate(value)
@@ -99,109 +104,49 @@ export class LLMService {
     const controller = new AbortController(),
       signal = controller.signal
     this.requests.set(req.requestId, controller)
-    const pending = new Map<string, string>()
+    const pending = new Map<string, { text: string; replace?: true }>()
     const flush = () => {
-      for (const [sentenceId, text] of pending)
-        if (!signal.aborted) delta({ requestId: req.requestId, sentenceId, text })
+      for (const [sentenceId, { text, replace }] of pending)
+        if (!signal.aborted) delta({ requestId: req.requestId, sentenceId, text, replace })
       pending.clear()
     }
     const timer = setInterval(flush, 50)
-    const emit = (sentenceId: string, text: string) =>
-      pending.set(sentenceId, (pending.get(sentenceId) || '') + text)
+    const emit = (sentenceId: string, text: string) => {
+      const prev = pending.get(sentenceId)
+      pending.set(sentenceId, { ...prev, text: (prev?.text || '') + text })
+    }
+    // 机器翻译整句返回，覆盖该句已显示的内容（大模型中断时可能残留半句）
+    const replace = (sentenceId: string, text: string) =>
+      pending.set(sentenceId, { text, replace: true })
     const completed = new Set<string>()
     try {
-      const profile = this.profile(req.profileId),
-        cfg = this.config.get(),
-        preset =
-          cfg.presets.find((p) => p.id === (req.presetId || cfg.settings.activePresetId)) ||
-          cfg.presets[0]
-      const system = buildPrompt(preset)
-      // Finish complete earlier sentences; never append a restarted partial translation.
-      const parser = new StreamParser(req.sentences.length, (index, text) =>
-        emit(req.sentences[index - 1].id, text)
-      )
-      let interrupted = false
-      for (let attempt = 0; attempt < 3; attempt++) {
-        let emitted = false
+      const { translator, llmFallbackToMt } = this.config.get().settings
+      let fallback: MtEngineId | undefined
+      if (translator.kind === 'mt')
+        await this.translateMt(translator.engineId, req.sentences, signal, replace, completed)
+      else
         try {
-          await this.stream(
-            profile,
-            [
-              { role: 'system', content: system },
-              {
-                role: 'user',
-                content: req.sentences.map((s, i) => '[' + (i + 1) + '] ' + s.text).join('\n')
-              }
-            ],
-            signal,
-            (text) => {
-              emitted = true
-              parser.push(text)
-            }
-          )
-          break
+          await this.translateLlm(req, signal, emit, completed, flush)
         } catch (e) {
-          if (signal.aborted) throw e
-          if (emitted) {
-            interrupted = true
-            break
-          }
+          // 网络、超时、服务异常或重试后仍限流时，未完成的句子改用微软免费引擎（设计文档 8.8）
           if (
+            signal.aborted ||
+            !llmFallbackToMt ||
             !(e instanceof LLMError) ||
-            !['RATE_LIMIT', 'SERVER', 'NETWORK', 'TIMEOUT'].includes(e.code) ||
-            attempt === 2
+            !['NETWORK', 'TIMEOUT', 'SERVER', 'RATE_LIMIT'].includes(e.code)
           )
             throw e
-          await delay(1000 * 2 ** attempt, signal)
+          fallback = DEFAULT_MT_ENGINE
+          await this.translateMt(
+            fallback,
+            req.sentences.filter((s) => !completed.has(s.id)),
+            signal,
+            replace,
+            completed
+          )
         }
-      }
-      const missing = parser.finish()
-      // When interrupted, the last numbered sentence may be truncated.
-      if (interrupted) {
-        const last = [...parser.values.keys()].at(-1)
-        if (last && !missing.includes(last)) missing.push(last)
-      }
-      for (let i = 1; i <= req.sentences.length; i++)
-        if (!missing.includes(i)) completed.add(req.sentences[i - 1].id)
       flush()
-      if (interrupted) throw new LLMError('NETWORK')
-      await Promise.all(
-        missing.map(async (index) => {
-          const s = req.sentences[index - 1]
-          for (let attempt = 0; attempt < 3; attempt++) {
-            let text = ''
-            try {
-              await this.stream(
-                profile,
-                [
-                  { role: 'system', content: system },
-                  { role: 'user', content: '[1] ' + s.text }
-                ],
-                signal,
-                (t) => {
-                  text += t
-                }
-              )
-              const cleaned = text.replace(/^\s*\[1\]\s*/, '').trim()
-              if (!cleaned) throw new LLMError('SERVER')
-              emit(s.id, cleaned)
-              completed.add(s.id)
-              return
-            } catch (e) {
-              if (signal.aborted) throw e
-              if (
-                !(e instanceof LLMError) ||
-                !['RATE_LIMIT', 'SERVER', 'NETWORK', 'TIMEOUT'].includes(e.code) ||
-                attempt === 2
-              )
-                throw e
-              await delay(1000 * 2 ** attempt, signal)
-            }
-          }
-        })
-      )
-      flush()
-      if (!signal.aborted) done(req.requestId)
+      if (!signal.aborted) done(req.requestId, fallback && { fallback })
     } catch (e) {
       flush()
       if (!signal.aborted) {
@@ -218,5 +163,121 @@ export class LLMService {
       clearInterval(timer)
       this.requests.delete(req.requestId)
     }
+  }
+  private async translateMt(
+    engineId: MtEngineId,
+    sentences: TranslateRequest['sentences'],
+    signal: AbortSignal,
+    emit: (sentenceId: string, text: string) => void,
+    completed: Set<string>
+  ): Promise<void> {
+    if (!sentences.length) return
+    const out = await this.mt.translate(
+      engineId,
+      sentences.map((s) => s.text),
+      signal
+    )
+    sentences.forEach((s, i) => {
+      emit(s.id, out[i].trim())
+      completed.add(s.id)
+    })
+  }
+  private async translateLlm(
+    req: TranslateRequest,
+    signal: AbortSignal,
+    emit: (sentenceId: string, text: string) => void,
+    completed: Set<string>,
+    flush: () => void
+  ): Promise<void> {
+    const profile = this.profile(req.profileId),
+      cfg = this.config.get(),
+      preset =
+        cfg.presets.find((p) => p.id === (req.presetId || cfg.settings.activePresetId)) ||
+        cfg.presets[0]
+    const system = buildPrompt(preset)
+    // Finish complete earlier sentences; never append a restarted partial translation.
+    const parser = new StreamParser(req.sentences.length, (index, text) =>
+      emit(req.sentences[index - 1].id, text)
+    )
+    let interrupted = false
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let emitted = false
+      try {
+        await this.stream(
+          profile,
+          [
+            { role: 'system', content: system },
+            {
+              role: 'user',
+              content: req.sentences.map((s, i) => '[' + (i + 1) + '] ' + s.text).join('\n')
+            }
+          ],
+          signal,
+          (text) => {
+            emitted = true
+            parser.push(text)
+          }
+        )
+        break
+      } catch (e) {
+        if (signal.aborted) throw e
+        if (emitted) {
+          interrupted = true
+          break
+        }
+        if (
+          !(e instanceof LLMError) ||
+          !['RATE_LIMIT', 'SERVER', 'NETWORK', 'TIMEOUT'].includes(e.code) ||
+          attempt === 2
+        )
+          throw e
+        await delay(1000 * 2 ** attempt, signal)
+      }
+    }
+    const missing = parser.finish()
+    // When interrupted, the last numbered sentence may be truncated.
+    if (interrupted) {
+      const last = [...parser.values.keys()].at(-1)
+      if (last && !missing.includes(last)) missing.push(last)
+    }
+    for (let i = 1; i <= req.sentences.length; i++)
+      if (!missing.includes(i)) completed.add(req.sentences[i - 1].id)
+    flush()
+    if (interrupted) throw new LLMError('NETWORK')
+    await Promise.all(
+      missing.map(async (index) => {
+        const s = req.sentences[index - 1]
+        for (let attempt = 0; attempt < 3; attempt++) {
+          let text = ''
+          try {
+            await this.stream(
+              profile,
+              [
+                { role: 'system', content: system },
+                { role: 'user', content: '[1] ' + s.text }
+              ],
+              signal,
+              (t) => {
+                text += t
+              }
+            )
+            const cleaned = text.replace(/^\s*\[1\]\s*/, '').trim()
+            if (!cleaned) throw new LLMError('SERVER')
+            emit(s.id, cleaned)
+            completed.add(s.id)
+            return
+          } catch (e) {
+            if (signal.aborted) throw e
+            if (
+              !(e instanceof LLMError) ||
+              !['RATE_LIMIT', 'SERVER', 'NETWORK', 'TIMEOUT'].includes(e.code) ||
+              attempt === 2
+            )
+              throw e
+            await delay(1000 * 2 ** attempt, signal)
+          }
+        }
+      })
+    )
   }
 }

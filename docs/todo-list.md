@@ -29,39 +29,39 @@
 
 ### 数据模型（`src/shared/`）
 
-- [ ] 新增 `src/shared/mt.ts`：`MtEngineId = 'microsoft-free' | 'google-free' | 'youdao'`（注释预留 `'yidu-cloud'`）、`MtEngineInfo`、内置元数据常量 `MT_ENGINES`（含域名白名单、服务方名称、注册页地址）
-- [ ] `AppSettings` 新增 `translator: { kind: 'llm' } | { kind: 'mt'; engineId }`（`llm` 时使用 `activeProfileId`）
-- [ ] `AppSettings` 新增 `llmFallbackToMt: boolean`（默认 `false`）
-- [ ] `AppConfig` 新增 `mt: { youdaoAppKey; privacyAcked; hideFreeHint }`
-- [ ] 配置迁移（主进程读取配置时）：旧配置无 `translator` 时，当前大模型已保存密钥 → `{ kind: 'llm' }`；否则 → `microsoft-free`；`mt` 缺失时写入默认值
-- [ ] 配置校验：`engineId` 非法时回退到 `microsoft-free`
-- [ ] 首次启动默认 `translator = microsoft-free`
+- [x] 新增 `src/shared/mt.ts`：`MtEngineId = 'microsoft-free' | 'google-free' | 'youdao'`（注释预留 `'yidu-cloud'`）、`MtEngineInfo`、内置元数据常量 `MT_ENGINES`（含域名白名单、服务方名称、注册页地址）
+- [x] `AppSettings` 新增 `translator: { kind: 'llm' } | { kind: 'mt'; engineId }`（`llm` 时使用 `activeProfileId`）
+- [x] `AppSettings` 新增 `llmFallbackToMt: boolean`（默认 `false`）
+- [x] `AppConfig` 新增 `mt: { youdaoAppKey; privacyAcked; hideFreeHint }`
+- [x] 配置迁移（主进程读取配置时）：旧配置无 `translator` 时，当前大模型已保存密钥 → `{ kind: 'llm' }`；否则 → `microsoft-free`；`mt` 缺失时写入默认值
+- [x] 配置校验：`engineId` 非法时回退到 `microsoft-free`
+- [x] 首次启动默认 `translator = microsoft-free`
 
 ### 机器翻译适配器（`src/main/services/mt/`）
 
-- [ ] `adapter.ts`：`interface MtAdapter { translate(texts: string[], signal: AbortSignal): Promise<string[]> }`，返回数组与输入一一对应
-- [ ] `microsoft-free.ts`：自动获取临时 token 并缓存约 10 分钟，过期或 401 时重新获取；批量翻译
-- [ ] `google-free.ts`：按 5000 字符分批，按换行对齐回句子；对齐失败时逐句请求
-- [ ] `youdao.ts`：有道智云官方接口签名（sha256），逐句请求、并发 3；错误码映射为中文说明（108 / 202 / 110 → `AUTH`，401 → `QUOTA`，411 → `RATE_LIMIT`）
-- [ ] 免密钥引擎地址写死在代码中，只允许白名单域名；所有请求走 `net.fetch`（遵守系统代理）
-- [ ] 支持取消（`AbortSignal`）和超时
-- [ ] 测试专用环境变量：可将各引擎地址指向本地 mock 服务（仅测试使用，生产包中忽略）
+- [x] `adapter.ts`：`interface MtAdapter { translate(texts: string[], signal: AbortSignal): Promise<string[]> }`，返回数组与输入一一对应
+- [x] `microsoft-free.ts`：自动获取临时 token 并缓存约 10 分钟，过期或 401 时重新获取；批量翻译
+- [x] `google-free.ts`：按 5000 字符分批，按换行对齐回句子；对齐失败时逐句请求
+- [x] `youdao.ts`：有道智云官方接口签名（sha256），逐句请求、并发 3；错误码映射为中文说明（108 / 202 / 110 → `AUTH`，401 → `QUOTA`，411 → `RATE_LIMIT`）
+- [x] 免密钥引擎地址写死在代码中，只允许白名单域名；所有请求走 `net.fetch`（遵守系统代理）
+- [x] 支持取消（`AbortSignal`）和超时
+- [x] 测试专用环境变量：可将各引擎地址指向本地 mock 服务（仅测试使用，生产包中忽略）
 
 ### 翻译分流与 IPC
 
-- [ ] `LLMService.translate` 按 `settings.translator` 分流：大模型走现有流式逻辑，机器翻译走 `MtAdapter`
-- [ ] 机器翻译结果按句发送 `llm:delta`（整句），最后发送 `llm:done`；右栏逐句卡片与整段切换不改动
-- [ ] 新增错误码 `ENGINE_UNAVAILABLE`（接口失效、网络不通、返回格式变化）和 `QUOTA`（有道余额不足）；限流映射到现有 `RATE_LIMIT` 并自动重试
-- [ ] `llmFallbackToMt` 开启时，大模型请求因 `NETWORK` / `TIMEOUT` / `SERVER` / 重试后仍限流而失败，对未完成的句子改用 `microsoft-free` 重试；配置类错误不回退
-- [ ] 新增 `mt:test`、`clipboard:read` 通道，并在 preload 与 `src/shared/ipc.ts` 中声明
-- [ ] 有道应用 ID 存配置（`mt.youdaoAppKey`），应用密钥通过现有 `secret.service` 加密保存（`profileId = 'youdao'`），支持 `secret:reveal` 显示
-- [ ] 翻译缓存 key 加入引擎 id，切换引擎后不命中旧译文
+- [x] `LLMService.translate` 按 `settings.translator` 分流：大模型走现有流式逻辑，机器翻译走 `MtAdapter`
+- [x] 机器翻译结果按句发送 `llm:delta`（整句，带 `replace: true` 覆盖该句已有内容，避免大模型中断残留的半句与回退译文拼在一起），最后发送 `llm:done`（回退时带 `fallback`，渲染进程据此不写大模型缓存）；右栏逐句卡片与整段切换不改动
+- [x] 新增错误码 `ENGINE_UNAVAILABLE`（接口失效、网络不通、返回格式变化）和 `QUOTA`（有道余额不足）；限流映射到现有 `RATE_LIMIT` 并自动重试
+- [x] `llmFallbackToMt` 开启时，大模型请求因 `NETWORK` / `TIMEOUT` / `SERVER` / 重试后仍限流而失败，对未完成的句子改用 `microsoft-free` 重试；配置类错误不回退
+- [x] 新增 `mt:test`、`clipboard:read` 通道，并在 preload 与 `src/shared/ipc.ts` 中声明
+- [x] 有道应用 ID 存配置（`mt.youdaoAppKey`），应用密钥通过现有 `secret.service` 加密保存（`profileId = 'youdao'`），支持 `secret:reveal` 显示
+- [x] 翻译缓存 key 加入引擎 id，切换引擎后不命中旧译文
 
 ### 阶段验收
 
-- [ ] 类型检查、单元测试、构建通过
-- [ ] 三个适配器的单元测试（录制响应样本，不依赖外网）：解析、分批、句子对齐、错误映射
-- [ ] 分流逻辑单元测试：大模型 / 机器翻译 / 回退
+- [x] 类型检查、单元测试、构建通过
+- [x] 三个适配器的单元测试（录制响应样本，不依赖外网）：解析、分批、句子对齐、错误映射
+- [x] 分流逻辑单元测试：大模型 / 机器翻译 / 回退
 
 ## 阶段 3：界面
 

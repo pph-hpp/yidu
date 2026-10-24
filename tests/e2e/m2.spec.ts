@@ -74,6 +74,7 @@ test.beforeEach(async ({}, info) => {
   page = await app.firstWindow()
   const config = defaultConfig()
   config.profiles[0] = { ...config.profiles[0], model: 'mock', baseUrl: url + '/v1' }
+  config.settings.translator = { kind: 'llm' }
   await page.evaluate(async (config) => {
     await window.api.setConfig(config)
     await window.api.setSecret({ profileId: 'default', apiKey: 'test-only-key' })

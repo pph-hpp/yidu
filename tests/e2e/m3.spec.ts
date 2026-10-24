@@ -99,6 +99,7 @@ test.beforeEach(async ({}, info) => {
     baseUrl: url + '/v1',
     contextWindow: 8000
   }
+  config.settings.translator = { kind: 'llm' }
   await page.evaluate((config) => window.api.setConfig(config), config)
   await page.reload()
   await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')

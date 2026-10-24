@@ -3,7 +3,7 @@ import type { Sentence, TranslateMode } from '../../../shared/types'
 import { textClean } from '../lib/textClean'
 import { splitSentences } from '../lib/sentenceSplit'
 import { useSettingsStore } from './settingsStore'
-import { cacheGet, cacheKey, cachePut } from '../lib/translateCache'
+import { cacheGet, cacheKey, cachePut, engineTag } from '../lib/translateCache'
 interface TranslateState {
   requestId: string | null
   rawSelection: string
@@ -99,9 +99,10 @@ async function send(
     preset =
       config.presets.find((p) => p.id === config.settings.activePresetId) || config.presets[0]
   const keys = new Map<string, string>(),
-    missing: Sentence[] = []
+    missing: Sentence[] = [],
+    tag = await engineTag(config)
   for (const sentence of sentences) {
-    const key = profile ? await cacheKey(sentence.source, profile, preset) : ''
+    const key = tag ? await cacheKey(sentence.source, tag) : ''
     if (useTranslateStore.getState().requestId !== root) return
     keys.set(sentence.id, key)
     const cached = !force && key ? await cacheGet(key) : undefined
@@ -175,7 +176,7 @@ export function bindTranslationEvents(): () => void {
       useTranslateStore.setState((s) => ({
         sentences: s.sentences.map((v) =>
           v.id === e.sentenceId
-            ? { ...v, target: v.target + e.text, status: 'streaming' }
+            ? { ...v, target: e.replace ? e.text : v.target + e.text, status: 'streaming' }
             : v.status === 'streaming' && batch.ids.includes(v.id)
               ? { ...v, status: 'done' }
               : v
@@ -191,11 +192,13 @@ export function bindTranslationEvents(): () => void {
           batch.ids.includes(v.id) ? { ...v, target: v.target.trim(), status: 'done' } : v
         )
       }))
-      for (const s of useTranslateStore.getState().sentences)
-        if (batch.ids.includes(s.id) && s.target) {
-          const key = batch.keys.get(s.id)
-          if (key) void cachePut(key, s.target)
-        }
+      // 大模型失败后由机器翻译补上的译文不写入大模型的缓存
+      if (!e.fallback)
+        for (const s of useTranslateStore.getState().sentences)
+          if (batch.ids.includes(s.id) && s.target) {
+            const key = batch.keys.get(s.id)
+            if (key) void cachePut(key, s.target)
+          }
     }),
     window.api.onTranslationError(onError)
   ]
