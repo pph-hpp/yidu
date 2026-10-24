@@ -1,0 +1,8 @@
+{
+  "artifact": "dist/Yidu-Setup-0.1.0-x64.exe",
+  "bytes": 130725771,
+  "sha256": "10A3CACFA84A54017D914D8A58CE1C62EC255021D688994DDBD66CD3B1C3D6A0",
+  "packagedBuildMatchesCurrentSource": true,
+  "matchedBuildFiles": 140,
+  "packagedSmoke": "passed"
+}
