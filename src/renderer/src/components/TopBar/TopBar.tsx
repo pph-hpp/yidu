@@ -1,6 +1,6 @@
 import { useTheme } from '../../lib/theme'
 import { useDocStore } from '../../stores/docStore'
-import { useSummaryStore } from '../../stores/summaryStore'
+import { useSummaryStore, summaryKey } from '../../stores/summaryStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { Icon } from '../Icon'
 import { FileTabs } from '../FileTabs/FileTabs'
@@ -8,6 +8,16 @@ import styles from './TopBar.module.css'
 export function TopBar({ openFile }: { openFile(): void }) {
   const theme = useTheme()
   const file = useDocStore((s) => s.docs.find((d) => d.fileId === s.activeId))
+  const summary = useSummaryStore((s) => (file ? s.jobs[summaryKey(file)] : undefined))
+  const summaryLabel = !summary
+    ? '全文总结'
+    : ['unsaved', 'saving', 'saved'].includes(summary.status)
+      ? '总结已完成'
+      : summary.status === 'error'
+        ? '总结待重试'
+        : summary.status === 'confirm'
+          ? '总结待确认'
+          : '总结进行中'
   return (
     <header className={styles.topbar}>
       <div className={styles.brand}>
@@ -31,10 +41,11 @@ export function TopBar({ openFile }: { openFile(): void }) {
         onClick={() => {
           if (file) void useSummaryStore.getState().start(file)
         }}
-        title="总结当前文档全文"
+        aria-label="全文总结"
+        title={summary ? summaryLabel + '，点击查看' : '总结当前文档全文'}
       >
         <Icon name="summary" size={15} />
-        全文总结
+        {summaryLabel}
       </button>
       <button
         className={styles.settings}

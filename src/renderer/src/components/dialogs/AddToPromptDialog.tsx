@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSummaryStore } from '../../stores/summaryStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useDocStore } from '../../stores/docStore'
@@ -6,12 +6,19 @@ import { useUIStore } from '../../stores/uiStore'
 import { Modal } from './Modal'
 import styles from './BusinessDialog.module.css'
 export function AddToPromptDialog() {
-  const s = useSummaryStore(),
+  const store = useSummaryStore(),
+    s = store.activeKey ? store.jobs[store.activeKey] : undefined,
     [brief, setBrief] = useState(true),
     [duplicate, setDuplicate] = useState(false),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false)
-  if (s.status !== 'saved' || !s.result || !s.file) return null
+  useEffect(() => {
+    setBrief(true)
+    setDuplicate(false)
+    setError('')
+  }, [s?.jobId, s?.promptOpen])
+  if (!store.visible || store.cancellingKey || !s?.promptOpen || s.status !== 'saved' || !s.result)
+    return null
   const text =
     brief && s.result.keyTerms && s.result.question
       ? s.result.question + '\n\n' + s.result.keyTerms
@@ -48,7 +55,7 @@ export function AddToPromptDialog() {
         )
       })
       useUIStore.getState().showToast('已加入提示词')
-      s.close()
+      store.close()
     } catch {
       setError('保存背景失败，请重试')
     } finally {
@@ -67,14 +74,18 @@ export function AddToPromptDialog() {
     </>
   ) : (
     <>
-      <button onClick={s.close}>暂不加入</button>
+      <button onClick={store.close}>暂不加入</button>
       <button className="primary" disabled={busy} onClick={() => void add()}>
         加入提示词
       </button>
     </>
   )
   return (
-    <Modal title={duplicate ? '这个文件已有背景' : '总结已保存'} onClose={s.close} footer={footer}>
+    <Modal
+      title={duplicate ? '这个文件已有背景' : '总结已保存'}
+      onClose={store.close}
+      footer={footer}
+    >
       <div className={styles.content}>
         <div className={styles.path}>
           <span title={s.savedPath}>{s.savedPath}</span>

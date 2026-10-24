@@ -48,6 +48,8 @@ export class SummaryService {
     const controller = new AbortController(),
       signal = controller.signal
     this.jobs.set(req.jobId, controller)
+    let cacheKey = '',
+      cacheForJob: Map<number, string> | undefined
     try {
       const config = this.llm.config.get(),
         profile = this.llm.profile(config.settings.summaryProfileId)
@@ -61,6 +63,8 @@ export class SummaryService {
         this.maps.set(hash, cache)
         if (this.maps.size > 3) this.maps.delete(this.maps.keys().next().value!)
       }
+      cacheKey = hash
+      cacheForJob = cache
       let input = req.text
       progress({ jobId: req.jobId, stage: 'extract', done: 1, total: 1 })
       if (!plan.direct) {
@@ -166,8 +170,13 @@ export class SummaryService {
         question: section(markdown, '研究问题与动机')
       })
       progress({ jobId: req.jobId, stage: 'reduce', done: 1, total: 1 })
+      // Keep partial Map results only for failures; an explicit retry after success is fresh.
+      if (this.maps.get(hash) === cache) this.maps.delete(hash)
     } catch (e) {
-      if (signal.aborted) throw new Error('总结已取消')
+      if (signal.aborted) {
+        if (this.maps.get(cacheKey) === cacheForJob) this.maps.delete(cacheKey)
+        throw new Error('总结已取消')
+      }
       if (e instanceof LLMError) throw new Error(e.message)
       if (e instanceof Error && e.message === '总结结构不完整，请重试') throw e
       throw new Error('总结失败，请检查模型配置或网络后重试')

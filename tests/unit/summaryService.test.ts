@@ -59,4 +59,10 @@ it('Map 失败重试复用已完成分块，总结选择指定模型', async () 
   for (const args of chat.mock.calls) expect(previouslyCompleted).not.toContain(args[0][1].content)
   expect(stream.mock.calls[0][0].id).toBe('summary')
   expect(result.mock.calls.at(-1)![0].markdown).toContain('模型：summary')
+  chat.mockClear()
+  await service.start({ ...req, jobId: 'fresh-after-success' }, () => {}, vi.fn())
+  expect(chat.mock.calls.length).toBeGreaterThan(1)
+  expect(chat.mock.calls.some((args) => previouslyCompleted.includes(args[0][1].content))).toBe(
+    true
+  )
 })

@@ -1,0 +1,44 @@
+{
+  "typecheck": "passed",
+  "unitTests": 57,
+  "e2eStats": {
+    "startTime": "2026-10-24T08:07:36.088Z",
+    "duration": 69645.528,
+    "expected": 25,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "summaryTests": [
+    {
+      "title": "A9 12 页 Map-Reduce、保存六节报告、加入背景并关闭背景",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2761
+        }
+      ]
+    },
+    {
+      "title": "取消网络任务、扫描版检测、取消保存后重新选择",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1998
+        }
+      ]
+    },
+    {
+      "title": "超过 30k token 先确认，不发送模型请求",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2445
+        }
+      ]
+    }
+  ]
+}
