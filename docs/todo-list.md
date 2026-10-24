@@ -15,32 +15,34 @@
 
 ## 阶段 1：更新设计文档
 
-- [ ] 在 `docs/译读-开发设计文档.md` 新增「机器翻译引擎」一节：引擎列表、适配器接口、分流方式、功能开关、引导式配置、隐私提示
-- [ ] 同步第 4.2 节 IPC 表（引擎测试、引擎配置相关通道）
-- [ ] 同步第 5 节数据模型（`MtEngine`、`AppSettings.translator`、`llmFallbackToMt`）
-- [ ] 同步第 8 节设置页（新增「翻译引擎」标签页）
-- [ ] 同步第 12 节界面（翻译栏引擎下拉、总结按钮禁用态、底部轻提示）
-- [ ] 同步第 14 节安全与隐私（正文发送到第三方翻译服务的说明、域名白名单）
-- [ ] 同步第 15 节验收项（新增免费引擎相关验收）
-- [ ] **阶段验收**：文档改动经用户确认后再进入阶段 2
+- [x] 在 `docs/译读-开发设计文档.md` 新增「机器翻译引擎」：作为第 8 节的 8.5～8.11（概述、数据模型与迁移、适配器、分流回退与错误、功能开关、设置页、隐私提示），不新增顶层章节以免打乱编号
+- [x] 同步第 4.2 节 IPC 表（`mt:test`、`clipboard:read`，`llm:translate` 分流说明）
+- [x] 同步第 5 节数据模型（`AppSettings.translator`、`llmFallbackToMt`、store、持久化、首次启动默认值）
+- [x] 同步第 8 节设置页（新增「翻译引擎」标签页）与 8.4 翻译栏快速切换
+- [x] 同步第 12 节界面（翻译栏引擎下拉、总结按钮禁用态、底部轻提示、隐私弹窗）与第 13 节状态表
+- [x] 同步第 14 节安全与隐私（域名白名单、正文发送说明、剪贴板读取规则）
+- [x] 同步第 15 节验收项（单元测试用例 + A15～A18）
+- [x] 顺带同步第 1、2、3、7、9、16、17 节（需求 R5、术语、目录、缓存 key 与错误码、总结模型语义、M6、风险）
+- [x] **阶段验收**：文档改动经用户确认后再进入阶段 2
 
 ## 阶段 2：数据模型与主进程
 
 ### 数据模型（`src/shared/`）
 
-- [ ] 新增 `MtProvider = 'microsoft-free' | 'google-free' | 'youdao'`（类型上预留 `'yidu-cloud'`）
-- [ ] 新增 `MtEngine { id; provider; name; builtin }`
-- [ ] `AppSettings` 新增 `translator: { kind: 'llm'; profileId } | { kind: 'mt'; engineId }`
+- [ ] 新增 `src/shared/mt.ts`：`MtEngineId = 'microsoft-free' | 'google-free' | 'youdao'`（注释预留 `'yidu-cloud'`）、`MtEngineInfo`、内置元数据常量 `MT_ENGINES`（含域名白名单、服务方名称、注册页地址）
+- [ ] `AppSettings` 新增 `translator: { kind: 'llm' } | { kind: 'mt'; engineId }`（`llm` 时使用 `activeProfileId`）
 - [ ] `AppSettings` 新增 `llmFallbackToMt: boolean`（默认 `false`）
-- [ ] 配置迁移：旧配置无 `translator` 时，已保存大模型密钥 → 用该大模型；否则 → `microsoft-free`
-- [ ] 配置校验：`translator` 指向不存在的引擎时回退到 `microsoft-free`
+- [ ] `AppConfig` 新增 `mt: { youdaoAppKey; privacyAcked; hideFreeHint }`
+- [ ] 配置迁移（主进程读取配置时）：旧配置无 `translator` 时，当前大模型已保存密钥 → `{ kind: 'llm' }`；否则 → `microsoft-free`；`mt` 缺失时写入默认值
+- [ ] 配置校验：`engineId` 非法时回退到 `microsoft-free`
+- [ ] 首次启动默认 `translator = microsoft-free`
 
 ### 机器翻译适配器（`src/main/services/mt/`）
 
 - [ ] `adapter.ts`：`interface MtAdapter { translate(texts: string[], signal: AbortSignal): Promise<string[]> }`，返回数组与输入一一对应
 - [ ] `microsoft-free.ts`：自动获取临时 token 并缓存约 10 分钟，过期或 401 时重新获取；批量翻译
 - [ ] `google-free.ts`：按 5000 字符分批，按换行对齐回句子；对齐失败时逐句请求
-- [ ] `youdao.ts`：有道智云官方接口签名（sha256），错误码映射为中文说明（密钥错误、余额不足、服务未开通等）
+- [ ] `youdao.ts`：有道智云官方接口签名（sha256），逐句请求、并发 3；错误码映射为中文说明（108 / 202 / 110 → `AUTH`，401 → `QUOTA`，411 → `RATE_LIMIT`）
 - [ ] 免密钥引擎地址写死在代码中，只允许白名单域名；所有请求走 `net.fetch`（遵守系统代理）
 - [ ] 支持取消（`AbortSignal`）和超时
 - [ ] 测试专用环境变量：可将各引擎地址指向本地 mock 服务（仅测试使用，生产包中忽略）
@@ -49,10 +51,10 @@
 
 - [ ] `LLMService.translate` 按 `settings.translator` 分流：大模型走现有流式逻辑，机器翻译走 `MtAdapter`
 - [ ] 机器翻译结果按句发送 `llm:delta`（整句），最后发送 `llm:done`；右栏逐句卡片与整段切换不改动
-- [ ] 新增错误码 `ENGINE_UNAVAILABLE`（接口失效、网络不通、返回格式变化）；限流映射到现有 `RATE_LIMIT` 并自动重试
-- [ ] `llmFallbackToMt` 开启时，大模型请求失败后自动改用免费引擎重试未完成的句子
-- [ ] 新增引擎连接测试通道（如 `mt:test`），并在 preload 与 `src/shared/ipc.ts` 中声明
-- [ ] 有道智云的 appKey / appSecret 通过现有 `secret.service` 加密保存，支持 `secret:reveal` 显示
+- [ ] 新增错误码 `ENGINE_UNAVAILABLE`（接口失效、网络不通、返回格式变化）和 `QUOTA`（有道余额不足）；限流映射到现有 `RATE_LIMIT` 并自动重试
+- [ ] `llmFallbackToMt` 开启时，大模型请求因 `NETWORK` / `TIMEOUT` / `SERVER` / 重试后仍限流而失败，对未完成的句子改用 `microsoft-free` 重试；配置类错误不回退
+- [ ] 新增 `mt:test`、`clipboard:read` 通道，并在 preload 与 `src/shared/ipc.ts` 中声明
+- [ ] 有道应用 ID 存配置（`mt.youdaoAppKey`），应用密钥通过现有 `secret.service` 加密保存（`profileId = 'youdao'`），支持 `secret:reveal` 显示
 - [ ] 翻译缓存 key 加入引擎 id，切换引擎后不命中旧译文
 
 ### 阶段验收
@@ -67,7 +69,7 @@
 
 - [ ] `settingsStore` 派生 `llmReady`：存在大模型配置且已保存密钥
 - [ ] 使用免费引擎时：提示词标签置灰，悬停提示「免费翻译引擎不支持提示词」；系统提示词与总结背景不参与请求
-- [ ] 无可用大模型时：顶栏「全文总结」按钮置灰，悬停提示「全文总结需要配置大模型 API」，点击打开设置
+- [ ] 无可用大模型时：顶栏「全文总结」按钮置灰，悬停提示「全文总结需要配置大模型 API」，点击或按 `Ctrl+Shift+M` 时打开设置的「模型 API」标签页
 - [ ] 无可用大模型时不会触发「加入提示词」弹窗
 
 ### 首次启动
@@ -82,17 +84,21 @@
 
 ### 设置页「翻译引擎」标签
 
-- [ ] 内置免费引擎列表，每个带「测试连接」按钮与结果提示
-- [ ] 有道智云：appKey、appSecret 输入框，带「显示 / 隐藏」和「测试连接」
-- [ ] 「如何获取？」按钮：用系统浏览器打开有道智云官方注册页，并在页面内写明步骤（注册 → 实名认证 → 创建应用 → 绑定文本翻译 → 复制应用 ID 和应用密钥）
-- [ ] 剪贴板识别：检测到疑似密钥时提示「检测到可能是密钥，是否填入？」，经用户同意后填入并自动测试连接（不经同意不读取、不填入）
+- [ ] 标签页顺序改为「翻译引擎」「模型 API」「系统提示词」「翻译偏好」，默认打开「翻译引擎」
+- [ ] 「翻译时使用」单选卡片组：大模型、微软、谷歌、有道，带状态标签（免费 / 需代理 / 需密钥 / 已配置）和「测试连接」
+- [ ] 大模型卡片未配置密钥时显示「前往「模型 API」配置」
+- [ ] 有道智云：应用 ID、应用密钥输入框，应用密钥带「显示 / 隐藏」
+- [ ] 「如何获取？」链接：用系统浏览器打开有道智云官网，卡片内显示 5 步说明
+- [ ] 「从剪贴板识别」按钮：用户点击后才读取剪贴板，识别出应用 ID 和应用密钥后弹确认，确认后填入并自动测试连接（不主动、不定时读取）
 - [ ] 连接失败时给出具体原因（如「应用未绑定文本翻译服务」），不只显示错误码
-- [ ] 偏好设置中新增「大模型请求失败时改用免费引擎」开关
+- [ ] 标签页底部「大模型请求失败时改用微软翻译（免费）」开关
+- [ ] 「翻译偏好」中的总结模型下拉默认项改为「使用当前大模型」，只列大模型配置
 
 ### 隐私与错误提示
 
-- [ ] 第一次使用某个免费引擎时提示一次：「选中的文字会发送到微软 / 谷歌的服务器进行翻译」，确认后记住
+- [ ] 第一次使用某个免费引擎时，发请求前弹 MtPrivacyDialog：「选中的文字会发送到微软 / 谷歌的服务器进行翻译……」，「继续使用」后写入 `mt.privacyAcked`；「取消」则不发送
 - [ ] `ENGINE_UNAVAILABLE` 时卡片显示原因（如「谷歌翻译不可用（可能需要代理）」）和「切换到微软翻译」按钮
+- [ ] `NO_PROFILE` 引导卡片增加「改用微软翻译（免费）」按钮
 
 ### 阶段验收
 
