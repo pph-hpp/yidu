@@ -220,6 +220,8 @@ export function bindTranslationEvents(): () => void {
       const batch = batches.get(e.requestId)
       if (!batch) return
       batches.delete(e.requestId)
+      if (e.fallback)
+        useUIStore.getState().showToast('大模型请求失败，已改用' + mtEngine(e.fallback).name)
       useTranslateStore.setState((s) => ({
         sentences: s.sentences.map((v) =>
           batch.ids.includes(v.id) ? { ...v, target: v.target.trim(), status: 'done' } : v

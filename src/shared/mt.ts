@@ -18,7 +18,8 @@ export const MT_ENGINES: readonly MtEngineInfo[] = [
     requiresKey: false,
     needsProxyInChina: false,
     provider: '微软',
-    hosts: ['edge.microsoft.com', 'api-edge.cognitive.microsofttranslator.com']
+    // Bing 网页翻译；国内访问 www.bing.com 会重定向到 cn.bing.com
+    hosts: ['www.bing.com', 'cn.bing.com']
   },
   {
     id: 'google-free',

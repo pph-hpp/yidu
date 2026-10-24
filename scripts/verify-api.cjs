@@ -9,10 +9,7 @@ fs.mkdirSync(profile, { recursive: true })
 async function launch() {
   const app = await electron.launch({ args: ['.', '--user-data-dir=' + profile], env })
   const page = await app.firstWindow()
-  await page.getByLabel('当前模型').waitFor()
-  await page.waitForFunction(
-    () => document.querySelector('[aria-label="当前模型"]')?.value === 'default'
-  )
+  await page.getByLabel('翻译引擎').waitFor()
   return app
 }
 ;(async () => {
@@ -40,6 +37,7 @@ async function launch() {
     const config = await page.evaluate(async () => {
       const cfg = await window.api.getConfig()
       cfg.presets[0].systemPrompt += '\nslack 译为时序裕量。'
+      cfg.settings.translator = { kind: 'llm' }
       await window.api.setConfig(cfg)
       return {
         profileCount: cfg.profiles.length,
@@ -47,7 +45,7 @@ async function launch() {
       }
     })
     await page.reload()
-    await page.getByLabel('当前模型').waitFor()
+    await page.getByLabel('翻译引擎').waitFor()
     await page
       .getByLabel('翻译文本', { exact: true })
       .fill(

@@ -57,7 +57,7 @@ async function main() {
       env
     })
     const page = await app.firstWindow()
-    await page.getByLabel('当前模型', { exact: true }).waitFor()
+    await page.getByLabel('翻译引擎', { exact: true }).waitFor()
     await page.evaluate(
       async (url) => {
         const config = await window.api.getConfig()
@@ -72,7 +72,7 @@ async function main() {
       'http://127.0.0.1:' + server.address().port + '/v1'
     )
     await page.reload()
-    await page.getByLabel('当前模型', { exact: true }).waitFor()
+    await page.getByLabel('翻译引擎', { exact: true }).waitFor()
     await app.evaluate(
       ({ dialog, BrowserWindow }, { input, output }) => {
         dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [input] })

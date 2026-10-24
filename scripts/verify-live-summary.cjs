@@ -42,7 +42,7 @@ delete env.ELECTRON_RUN_AS_NODE
   })
   try {
     const page = await app.firstWindow()
-    await page.getByLabel('当前模型').waitFor()
+    await page.getByLabel('翻译引擎').waitFor()
     await app.evaluate(
       ({ dialog }, { input, output }) => {
         dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [input] })

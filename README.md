@@ -72,6 +72,15 @@ node scripts/verify-live-summary.cjs
 node scripts/verify-live-summary.cjs --paper
 ```
 
+免费机器翻译引擎（微软 / Bing 网页、谷歌）是非官方接口，可能随时失效，同样只在需要时手动验证。两个脚本都会把两句固定的英文测试句发送到对应服务：
+
+```powershell
+node scripts/verify-mt.cjs              # 先 npm run build；设置 YIDU_YOUDAO_APP_KEY / YIDU_YOUDAO_APP_SECRET 时一并验证有道
+node scripts/verify-package-mt.cjs      # 先 npm run pack；验证未安装的打包版在无密钥时可翻译、全文总结禁用
+```
+
+E2E 中三个机器翻译引擎都指向本地模拟服务（`playwright.config.ts` 默认指向不可达端口），不会访问真实翻译服务。
+
 最后一条使用有公开许可的论文前 12 页节选，许可证见 `tests/fixtures/LICENSE.txt`。真实验证使用 `.local/` 下独立配置，不把测试术语和背景写进正常用户设置。清理临时目录后，需先执行 `verify-api.cjs` 初始化测试配置，再执行 `verify-live-summary.cjs`。
 
 `npm run fixtures` 生成原创 CC0 测试素材；第三方真实论文及节选保留来源与 CC BY 4.0 说明。第 15.1 节列举的清洗、分句、流解析、坐标和四类 PDF 注释测试均已实现。
