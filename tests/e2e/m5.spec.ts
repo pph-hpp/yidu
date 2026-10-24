@@ -43,6 +43,21 @@ async function open(name: string) {
   )
 }
 test('分栏鼠标/键盘/复位/持久化，最近文件及单实例转交', async () => {
+  // CI 的桌面尺寸可能限制初始窗口；此用例的拖动断言需要完整的桌面布局。
+  await app.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows()[0]
+    win.setContentSize(1440, 900)
+    win.focus()
+  })
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false
+  })
+  await expect.poll(() => page.evaluate(() => innerWidth)).toBe(1440)
+
   const split = page.getByRole('separator', { name: '调整翻译栏宽度' })
   await split.focus()
   await page.keyboard.press('ArrowLeft')
@@ -55,9 +70,13 @@ test('分栏鼠标/键盘/复位/持久化，最近文件及单实例转交', as
   const box = await split.boundingBox()
   await page.mouse.move(box!.x + 4, box!.y + 60)
   await page.mouse.down()
-  await page.mouse.move(box!.x - 80, box!.y + 60)
+  await page.mouse.move(box!.x - 80, box!.y + 60, { steps: 5 })
   await page.mouse.up()
-  expect(Number(await split.getAttribute('aria-valuenow'))).toBeGreaterThan(490)
+  await expect.poll(async () => Number(await split.getAttribute('aria-valuenow'))).toBeGreaterThan(490)
+  const draggedWidth = Number(await split.getAttribute('aria-valuenow'))
+  await expect
+    .poll(() => page.evaluate(async () => (await window.api.getConfig()).settings.rightPaneWidth))
+    .toBe(draggedWidth)
   await open('reader.md')
   await page.keyboard.press('Control+w')
   await expect(
