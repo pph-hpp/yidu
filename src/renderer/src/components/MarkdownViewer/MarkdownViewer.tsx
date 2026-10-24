@@ -1,11 +1,22 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { OpenedFile } from '../../../../shared/types'
 import { renderMarkdown } from '../../lib/markdown'
 import { useDocStore } from '../../stores/docStore'
 import styles from './MarkdownViewer.module.css'
 const positions = new Map<string, number>()
 export function MarkdownViewer({ file }: { file: OpenedFile }) {
-  const html = useMemo(() => renderMarkdown(file.text ?? ''), [file.text])
+  const [images, setImages] = useState<Record<string, string>>({})
+  useEffect(() => {
+    const next = Object.fromEntries(
+      Object.entries(file.images ?? {}).map(([src, image]) => [
+        src,
+        URL.createObjectURL(new Blob([new Uint8Array(image.bytes)], { type: image.mime }))
+      ])
+    )
+    setImages(next)
+    return () => Object.values(next).forEach(URL.revokeObjectURL)
+  }, [file.images])
+  const html = useMemo(() => renderMarkdown(file.text ?? '', images), [file.text, images])
   const zoom = useDocStore((s) => s.zoom)
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => {

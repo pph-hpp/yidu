@@ -8,7 +8,7 @@ import type {
   ConnectionResult
 } from './translation'
 import type { ModelProfile } from './types'
-import type { OpenedFile } from './types'
+import type { OpenedFile, RecentFile } from './types'
 export const IPC = {
   FILE_OPEN: 'file:open',
   FILE_OPEN_PATH: 'file:openPath',
@@ -38,6 +38,9 @@ export interface OpenPathRequest {
 }
 // Expose individual validated operations, never generic IPC.
 export interface YiduAPI {
+  recentFiles(): Promise<RecentFile[]>
+  getPathForFile(file: File): string
+  onOpenPaths(callback: (paths: string[]) => void): () => void
   savePdf(req: PdfSaveRequest): Promise<PdfSaveResult>
   savePdfAs(req: PdfSaveRequest): Promise<PdfSaveResult>
   onCloseRequest(callback: () => void): () => void

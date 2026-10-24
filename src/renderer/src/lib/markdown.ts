@@ -18,9 +18,18 @@ const md = new MarkdownIt({
   highlight: (code, lang) =>
     lang && hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : ''
 }).use(katex, { throwOnError: false })
-md.validateLink = (url) => /^(https?:|mailto:|#)/i.test(url)
+md.validateLink = (url) =>
+  /^(https?:|mailto:|#)/i.test(url) ||
+  (!/^[a-z][a-z0-9+.-]*:|^[\\/]/i.test(url) && !url.includes('\0'))
 // Never load local/remote resources named by an untrusted Markdown document.
-md.renderer.rules.image = (tokens, index) => md.utils.escapeHtml(tokens[index].content)
+md.renderer.rules.image = (tokens, index, _options, env) => {
+  const token = tokens[index],
+    src = env?.images?.[token.attrGet('src') ?? ''],
+    alt = md.utils.escapeHtml(token.content)
+  return typeof src === 'string' && src.startsWith('blob:')
+    ? '<img src="' + md.utils.escapeHtml(src) + '" alt="' + alt + '" loading="lazy">'
+    : alt
+}
 const renderLink =
   md.renderer.rules.link_open ??
   ((tokens, index, options, _env, self) => self.renderToken(tokens, index, options))
@@ -30,6 +39,8 @@ md.renderer.rules.link_open = (tokens, index, options, env, self) => {
     tokens[index].attrSet('target', '_blank')
     tokens[index].attrSet('rel', 'noopener noreferrer')
   }
+  if (!/^(https?:|mailto:|#)/i.test(href))
+    tokens[index].attrs = tokens[index].attrs?.filter((a) => a[0] !== 'href') ?? null
   return renderLink(tokens, index, options, env, self)
 }
 md.core.ruler.push('heading-anchors', (state) => {
@@ -46,4 +57,5 @@ md.core.ruler.push('heading-anchors', (state) => {
     token.attrSet('id', base + (count ? '-' + count : ''))
   })
 })
-export const renderMarkdown = (text: string): string => md.render(text)
+export const renderMarkdown = (text: string, images: Record<string, string> = {}): string =>
+  md.render(text, { images })

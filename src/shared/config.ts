@@ -53,9 +53,13 @@ export function stringField(value: unknown, max = 20000): asserts value is strin
 }
 export function validId(value: unknown): asserts value is string {
   stringField(value, 200)
-  if (!/^[\w:.-]+$/.test(value)) throw new Error('标识无效')
+  if (['__proto__', 'prototype', 'constructor'].includes(value) || !/^[\w:.-]+$/.test(value))
+    throw new Error('标识无效')
 }
-export function validateProfile(value: unknown): asserts value is ModelProfile {
+export function validateProfile(
+  value: unknown,
+  approvedHttp: readonly string[] = []
+): asserts value is ModelProfile {
   record(value)
   validId(value.id)
   stringField(value.name, 100)
@@ -69,7 +73,13 @@ export function validateProfile(value: unknown): asserts value is ModelProfile {
     url.password ||
     url.hash ||
     (url.protocol !== 'https:' &&
-      !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))
+      !(
+        url.protocol === 'http:' &&
+        (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ||
+          approvedHttp.some(
+            (s) => new URL(s).href.replace(/\/$/, '') === url.href.replace(/\/$/, '')
+          ))
+      ))
   )
     throw new Error('Base URL 必须为 HTTPS，只有本地模型可使用 HTTP')
   if (
@@ -106,13 +116,16 @@ export function validateProfile(value: unknown): asserts value is ModelProfile {
   )
     throw new Error('模型配置包含未知字段')
 }
-export function validateConfig(value: unknown): asserts value is AppConfig {
+export function validateConfig(
+  value: unknown,
+  approvedHttp: readonly string[] = []
+): asserts value is AppConfig {
   record(value)
   if (Object.keys(value).some((k) => !['settings', 'profiles', 'presets', 'recent'].includes(k)))
     throw new Error('配置包含未知字段')
   if (!Array.isArray(value.profiles) || !value.profiles.length || value.profiles.length > 100)
     throw new Error('至少保留一个模型')
-  value.profiles.forEach(validateProfile)
+  value.profiles.forEach((p) => validateProfile(p, approvedHttp))
   if (new Set(value.profiles.map((p) => p.id)).size !== value.profiles.length)
     throw new Error('模型标识重复')
   if (!Array.isArray(value.presets) || !value.presets.length || value.presets.length > 100)

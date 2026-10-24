@@ -39,3 +39,13 @@
   flex-shrink: 0;
   color: var(--text-secondary);
 }
+
+.topbar select {
+  height: var(--px-30);
+  max-width: var(--px-120);
+  color: var(--text-secondary);
+  background: var(--bg-panel);
+  border: var(--px-1) solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--px-12);
+}

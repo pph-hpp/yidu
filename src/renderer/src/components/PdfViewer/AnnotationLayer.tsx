@@ -36,9 +36,14 @@ export function AnnotationLayer({
     const hide = (e: Event) => {
       if (!(e.target as HTMLElement)?.closest?.('[data-annotation-ui]')) state.select(null)
     }
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') state.select(null)
+    }
+    window.addEventListener('keydown', escape)
     window.addEventListener('mousedown', hide)
     window.addEventListener('scroll', hide, true)
     return () => {
+      window.removeEventListener('keydown', escape)
       window.removeEventListener('mousedown', hide)
       window.removeEventListener('scroll', hide, true)
     }

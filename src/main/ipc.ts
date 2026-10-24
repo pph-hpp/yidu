@@ -43,6 +43,20 @@ export function registerIPC(
       return run(arg)
     })
   }
+  const openRecent = async (arg: unknown) => {
+    const file = await files.openPath(arg)
+    config.set({
+      recent: [
+        { path: file.path, name: file.name, kind: file.kind, mtimeMs: file.mtimeMs },
+        ...config.get().recent.filter((f) => f.path.toLowerCase() !== file.path.toLowerCase())
+      ].slice(0, 10)
+    })
+    return file
+  }
+  handle(IPC.FILE_RECENT, async (arg) => {
+    if (arg !== undefined) throw new Error('最近文件不接受参数')
+    return config.get().recent
+  })
   handle(IPC.FILE_OPEN, async (arg) => {
     if (arg !== undefined) throw new Error('打开文件不接受参数')
     const result = await dialog.showOpenDialog(win, {
@@ -50,9 +64,9 @@ export function registerIPC(
       properties: ['openFile'],
       filters: [{ name: 'PDF / Markdown', extensions: ['pdf', 'md', 'markdown'] }]
     })
-    return result.canceled ? null : files.openPath({ path: result.filePaths[0] })
+    return result.canceled ? null : openRecent({ path: result.filePaths[0] })
   })
-  handle(IPC.FILE_OPEN_PATH, (arg) => files.openPath(arg))
+  handle(IPC.FILE_OPEN_PATH, openRecent)
   handle(IPC.SUMMARY_START, async (arg) =>
     summary.start(
       arg,
@@ -129,7 +143,10 @@ export function registerIPC(
     if (arg !== undefined) throw new Error('关闭不接受参数')
     closeConfirmed()
   })
-  handle(IPC.CONFIG_GET, async () => config.get())
+  handle(IPC.CONFIG_GET, async (arg) => {
+    if (arg !== undefined) throw new Error('配置读取不接受参数')
+    return config.get()
+  })
   handle(IPC.CONFIG_SET, async (arg) => config.set(arg))
   handle(IPC.SECRET_SET, async (arg) => {
     const p = payload(arg)
@@ -140,11 +157,20 @@ export function registerIPC(
   handle(IPC.LLM_CANCEL, async (arg) => llm.cancel(payload(arg).requestId))
   handle(IPC.LLM_TRANSLATE, async (arg) => {
     validateTranslate(arg)
-    void llm.translate(
-      arg,
-      (e) => send(IPC.LLM_DELTA, e),
-      (requestId) => send(IPC.LLM_DONE, { requestId }),
-      (e) => send(IPC.LLM_ERROR, e)
-    )
+    void llm
+      .translate(
+        arg,
+        (e) => send(IPC.LLM_DELTA, e),
+        (requestId) => send(IPC.LLM_DONE, { requestId }),
+        (e) => send(IPC.LLM_ERROR, e)
+      )
+      .catch(() =>
+        send(IPC.LLM_ERROR, {
+          requestId: arg.requestId,
+          code: 'NETWORK',
+          message: '无法开始翻译，请重试',
+          sentenceIds: arg.sentences.map((s) => s.id)
+        })
+      )
   })
 }

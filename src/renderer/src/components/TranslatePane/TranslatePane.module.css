@@ -254,3 +254,11 @@
   border: var(--px-1) solid var(--border-input);
   border-radius: var(--radius);
 }
+
+.card[data-linked='true'],
+.card:focus-within {
+  background: var(--bg-hover);
+}
+.card:focus-within .cardActions {
+  opacity: 1;
+}

@@ -1,3 +1,4 @@
+import { approvedHttpUrls } from './http-exceptions'
 import Store from 'electron-store'
 import { defaultConfig, validateConfig, type AppConfig } from '../../shared/config'
 export class ConfigService {
@@ -8,7 +9,7 @@ export class ConfigService {
   set(patch: unknown): AppConfig {
     if (!patch || typeof patch !== 'object' || Array.isArray(patch)) throw new Error('配置格式错误')
     const next = { ...this.get(), ...patch }
-    validateConfig(next)
+    validateConfig(next, approvedHttpUrls())
     this.store.store = next
     return this.get()
   }

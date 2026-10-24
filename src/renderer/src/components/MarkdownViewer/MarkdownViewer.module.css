@@ -87,3 +87,8 @@
 .paper :global(.hljs-comment) {
   color: var(--text-secondary);
 }
+
+.paper img {
+  max-width: 100%;
+  height: auto;
+}

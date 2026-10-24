@@ -1,3 +1,4 @@
+import { useSourceLink, showSource } from '../../lib/sourceLink'
 import { useState } from 'react'
 import type { Sentence } from '../../../../shared/types'
 import { useTranslateStore } from '../../stores/translateStore'
@@ -30,6 +31,7 @@ export function SentenceCard({
   sentence: Sentence
   paragraphStart: boolean
 }) {
+  const hover = useSourceLink((s) => s.hover)
   const state = useTranslateStore(),
     [editing, setEditing] = useState<string | null>(null),
     [edit, setEdit] = useState('')
@@ -43,6 +45,11 @@ export function SentenceCard({
     <article
       className={styles.card}
       data-testid="sentence-card"
+      data-linked={hover === s.id}
+      onMouseEnter={() => showSource(s.id)}
+      onMouseLeave={() => showSource(null)}
+      onFocus={() => showSource(s.id)}
+      onBlur={() => showSource(null)}
       data-status={s.status}
       data-streaming={s.status === 'streaming'}
       data-paragraph={paragraphStart}

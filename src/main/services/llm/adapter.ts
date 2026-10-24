@@ -1,3 +1,4 @@
+import { approvedHttpUrls } from '../http-exceptions'
 import { openAIRequest } from './openai'
 import { anthropicRequest } from './anthropic'
 import { net } from 'electron'
@@ -48,7 +49,7 @@ export function requestSpec(
   opts: ChatOptions,
   stream: boolean
 ) {
-  validateProfile(profile)
+  validateProfile(profile, approvedHttpUrls())
   return profile.provider === 'anthropic'
     ? anthropicRequest(profile, key, msgs, opts, stream)
     : openAIRequest(profile, key, msgs, opts, stream)

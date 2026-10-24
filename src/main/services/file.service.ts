@@ -1,3 +1,4 @@
+import {readMarkdownImages} from './markdown-images'
 import { validId } from '../../shared/config'
 import { validateAnnots, type PdfSaveRequest } from '../../shared/annotations'
 import { atomicWrite } from './atomic-write'
@@ -69,7 +70,7 @@ export class FileService {
         name: basename(path),
         kind,
         mtimeMs: stat.mtimeMs,
-        ...(kind === 'pdf' ? { bytes } : { text })
+        ...(kind === 'pdf' ? { bytes } : { text,images:await readMarkdownImages(path,text??'') })
       }
     } finally {
       await handle.close()

@@ -1,3 +1,6 @@
+import { SourceLinkOverlay, clearSourceLink } from './lib/sourceLink'
+import { SplitPane } from './components/SplitPane/SplitPane'
+import { openPaths, refreshRecent } from './lib/openFiles'
 import { bindCloseEvents } from './lib/fileActions'
 import { UnsavedChangesDialog } from './components/dialogs/UnsavedChangesDialog'
 import { useAnnotStore } from './stores/annotStore'
@@ -40,7 +43,9 @@ export function App() {
       offClose()
     }
   }, [])
+  useEffect(() => window.api.onOpenPaths((paths) => void openPaths(paths)), [])
   const toast = useUIStore((s) => s.toast)
+  const [dragging, setDragging] = useState(false)
   const [opening, setOpening] = useState(false),
     [error, setError] = useState('')
   const openFile = useCallback(async () => {
@@ -48,7 +53,10 @@ export function App() {
     setError('')
     try {
       const file = await window.api.openFile()
-      if (file) useDocStore.getState().open(file)
+      if (file) {
+        useDocStore.getState().open(file)
+        await refreshRecent()
+      }
     } catch (reason) {
       setError(
         (reason as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
@@ -60,6 +68,7 @@ export function App() {
   useEffect(() => registerShortcuts(() => void openFile()), [openFile])
   useEffect(() => releaseClosedPdfs(docs.map((d) => d.fileId)), [docs])
   useEffect(() => {
+    clearSourceLink()
     useAnnotStore.getState().setTool('select')
     useTranslateStore.getState().clear()
     setError('')
@@ -67,14 +76,27 @@ export function App() {
   return (
     <main
       className={styles.app}
+      data-dragging={dragging}
+      onDragEnter={(e) => {
+        e.preventDefault()
+        if (e.dataTransfer.types.includes('Files')) setDragging(true)
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false)
+      }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()
-        useUIStore.getState().showToast('请使用打开文件按钮或 Ctrl+O')
+        setDragging(false)
+        void openPaths(
+          Array.from(e.dataTransfer.files)
+            .map((file) => window.api.getPathForFile(file))
+            .filter((path) => /\.(pdf|md|markdown)$/i.test(path))
+        )
       }}
     >
       <TopBar openFile={() => void openFile()} />
-      <div className={styles.body}>
+      <SplitPane>
         <section className={styles.left} data-document-pane>
           <EditToolbar />
           <DocumentPane
@@ -84,9 +106,9 @@ export function App() {
             error={error}
           />
         </section>
-        <div className={styles.divider} />
         <TranslatePane />
-      </div>
+      </SplitPane>
+      <SourceLinkOverlay />
       <StatusBar />
       <UnsavedChangesDialog />
       <SummaryProgressDialog />

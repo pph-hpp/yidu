@@ -45,10 +45,14 @@ it('流式提取及错误不回显服务端密钥', async () => {
       new Response('data: {"choices":[{"delta":{"content":"你好"}}]}\n\ndata: [DONE]\n\n')
     )
   const adapter = new FetchAdapter(p, 'private', fetcher)
-  let result = ''; for await (const text of adapter.chatStream([{ role: 'user', content: 'hi' }], opts)) result += text
+  let result = ''
+  for await (const text of adapter.chatStream([{ role: 'user', content: 'hi' }], opts))
+    result += text
   expect(result).toBe('你好')
-  fetcher.mockResolvedValue(new Response(JSON.stringify({choices:[{message:{content:'非流式'}}]})))
-  expect(await adapter.chat([],opts)).toBe('非流式')
+  fetcher.mockResolvedValue(
+    new Response(JSON.stringify({ choices: [{ message: { content: '非流式' } }] }))
+  )
+  expect(await adapter.chat([], opts)).toBe('非流式')
   fetcher.mockResolvedValue(new Response('private sk-sensitive', { status: 401 }))
   await expect(adapter.chat([], opts)).rejects.toThrow('API Key 无效或无权限')
 })

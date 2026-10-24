@@ -74,8 +74,10 @@ test('安全边界、标签与打开失败', async () => {
       'cancelTranslation',
       'confirmClose',
       'getConfig',
+      'getPathForFile',
       'hasSecret',
       'onCloseRequest',
+      'onOpenPaths',
       'onSummaryProgress',
       'onSummaryResult',
       'onTranslationDelta',
@@ -83,6 +85,7 @@ test('安全边界、标签与打开失败', async () => {
       'onTranslationError',
       'openFile',
       'openPath',
+      'recentFiles',
       'savePdf',
       'savePdfAs',
       'saveSummary',
@@ -341,4 +344,3 @@ test('双栏 PDF、键盘选区、滚动隐藏浮层与阅读位置恢复', asyn
   await page.keyboard.press('Control+0')
   await expect(page.getByRole('button', { name: '缩放比例' })).toHaveText('100%')
 })
-

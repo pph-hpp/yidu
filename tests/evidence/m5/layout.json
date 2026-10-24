@@ -1,0 +1,70 @@
+[
+  {
+    "theme": "light",
+    "width": 1366,
+    "height": 768,
+    "dpr": 1,
+    "overflow": false,
+    "top": 52,
+    "status": 28,
+    "right": 420,
+    "contrasts": [
+      5.99714143729494,
+      15.797619425332647,
+      4.927354314929692,
+      6.564069406823067
+    ],
+    "unnamedButtons": 0
+  },
+  {
+    "theme": "dark",
+    "width": 1366,
+    "height": 768,
+    "dpr": 1,
+    "overflow": false,
+    "top": 52,
+    "status": 28,
+    "right": 420,
+    "contrasts": [
+      6.202646435474265,
+      13.42080251214293,
+      6.357778544441128,
+      7.296538537292375
+    ],
+    "unnamedButtons": 0
+  },
+  {
+    "theme": "light",
+    "width": 1707,
+    "height": 960,
+    "dpr": 1.5,
+    "overflow": false,
+    "top": 52,
+    "status": 28,
+    "right": 420,
+    "contrasts": [
+      5.99714143729494,
+      15.797619425332647,
+      4.927354314929692,
+      6.564069406823067
+    ],
+    "unnamedButtons": 0
+  },
+  {
+    "theme": "dark",
+    "width": 1707,
+    "height": 960,
+    "dpr": 1.5,
+    "overflow": false,
+    "top": 52,
+    "status": 28,
+    "right": 420,
+    "contrasts": [
+      6.202646435474265,
+      13.42080251214293,
+      6.357778544441128,
+      7.296538537292375
+    ],
+    "unnamedButtons": 0
+  }
+]

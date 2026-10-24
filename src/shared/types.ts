@@ -6,6 +6,7 @@ export interface OpenedFile {
   kind: DocKind
   bytes?: Uint8Array
   text?: string
+  images?: Record<string, { bytes: Uint8Array; mime: string }>
   mtimeMs: number
 }
 export interface RecentFile {

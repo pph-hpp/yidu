@@ -1,12 +1,25 @@
 import { IPC } from '../shared/ipc'
 import { app, BrowserWindow, Menu, session, shell, dialog } from 'electron'
-import { join } from 'node:path'
+import { join, isAbsolute } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { registerIPC } from './ipc'
 import { isAppPage, isExternalLink } from './security'
 app.setName('yidu')
 if (app.commandLine.hasSwitch('user-data-dir'))
   app.setPath('userData', app.commandLine.getSwitchValue('user-data-dir'))
+let mainWindow: BrowserWindow | null = null
+let pendingPaths = process.argv.filter((p) => isAbsolute(p) && /\.(pdf|md|markdown)$/i.test(p))
+const primary = app.requestSingleInstanceLock()
+if (!primary) app.quit()
+app.on('second-instance', (_event, argv) => {
+  const paths = argv.filter((p) => isAbsolute(p) && /\.(pdf|md|markdown)$/i.test(p))
+  if (mainWindow && !mainWindow.webContents.isLoading()) {
+    mainWindow.webContents.send(IPC.FILE_OPEN_PATH, paths)
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+  } else pendingPaths.push(...paths)
+})
 function createWindow(): void {
   const appUrl = process.env.ELECTRON_RENDERER_URL
     ? new URL(process.env.ELECTRON_RENDERER_URL).href
@@ -25,6 +38,13 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: true,
       webSecurity: true
+    }
+  })
+  mainWindow = win
+  win.webContents.once('did-finish-load', () => {
+    if (pendingPaths.length) {
+      win.webContents.send(IPC.FILE_OPEN_PATH, pendingPaths)
+      pendingPaths = []
     }
   })
   const shortcut = (key: string, shiftKey = false) => {
@@ -107,16 +127,17 @@ function createWindow(): void {
   win.once('ready-to-show', () => win.show())
   void win.loadURL(appUrl)
 }
-void app.whenReady().then(() => {
-  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
-    callback(false)
-  )
-  session.defaultSession.setPermissionCheckHandler(() => false)
-  createWindow()
-  app.on('activate', () => {
-    if (!BrowserWindow.getAllWindows().length) createWindow()
+if (primary)
+  void app.whenReady().then(() => {
+    session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
+      callback(false)
+    )
+    session.defaultSession.setPermissionCheckHandler(() => false)
+    createWindow()
+    app.on('activate', () => {
+      if (!BrowserWindow.getAllWindows().length) createWindow()
+    })
   })
-})
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })

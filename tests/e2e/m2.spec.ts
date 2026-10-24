@@ -100,7 +100,9 @@ test('A4–A6 流式顺序、模式共用数据、缓存与提示词失效', asy
   await expect(page.getByTestId('sentence-card').nth(2)).toContainText('译文3')
   await expect(page.locator('[data-status=done]')).toHaveCount(3)
   await page.getByRole('button', { name: '整段', exact: true }).click()
-  await expect(page.getByLabel('翻译栏')).toContainText('时序裕量译文1 时序裕量译文2 时序裕量译文3')
+  await expect(page.getByLabel('翻译栏', { exact: true })).toContainText(
+    '时序裕量译文1 时序裕量译文2 时序裕量译文3'
+  )
   await page.getByRole('button', { name: '逐句', exact: true }).click()
   expect(requests).toHaveLength(1)
   await translate()
@@ -129,7 +131,7 @@ test('缺失编号降级、限流重试、错误卡片与取消', async () => {
   mode = 'auth'
   await page.getByRole('button', { name: '重新翻译', exact: true }).click()
   await expect(page.getByTestId('sentence-card').first()).toContainText('API Key 无效或无权限')
-  await expect(page.getByLabel('翻译栏')).not.toContainText('sk-private')
+  await expect(page.getByLabel('翻译栏', { exact: true })).not.toContainText('sk-private')
   mode = 'normal'
   requests = []
   await translate(

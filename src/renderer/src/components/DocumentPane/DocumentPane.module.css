@@ -44,3 +44,29 @@
   font-size: var(--px-12);
   color: var(--text-secondary);
 }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--px-16);
+}
+.recent {
+  width: var(--px-420);
+  max-width: 100%;
+  font-size: var(--px-12);
+  color: var(--text-secondary);
+}
+.recent button {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  height: var(--px-30);
+}
+
+:global([data-dragging='true']) .card {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

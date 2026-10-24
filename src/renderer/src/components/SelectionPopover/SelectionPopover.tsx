@@ -1,3 +1,5 @@
+import { selectionParts, partsText, type TextPart } from '../../lib/selectionText'
+import { bindSources } from '../../lib/sourceLink'
 import { useAnnotStore } from '../../stores/annotStore'
 import { useDocStore } from '../../stores/docStore'
 import { safeAnnotate } from '../../lib/annotationActions'
@@ -9,6 +11,9 @@ import styles from './SelectionPopover.module.css'
 interface SelectionData {
   text: string
   rect: DOMRect
+  previous: string
+  parts: TextPart[]
+  previousParts: TextPart[]
 }
 export function SelectionPopover({ container }: { container: RefObject<HTMLDivElement> }) {
   const activeFile = useDocStore((s) => s.docs.find((d) => d.fileId === s.activeId))
@@ -19,11 +24,15 @@ export function SelectionPopover({ container }: { container: RefObject<HTMLDivEl
   const [selection, setSelection] = useState<SelectionData>()
   const [position, setPosition] = useState({ left: 0, top: 0 })
   const popover = useRef<HTMLDivElement>(null)
+  const linked = useRef<TextPart[]>([])
   const timer = useRef<ReturnType<typeof setTimeout>>()
-  const translate = (text: string, waitMs = 0) => {
+  const translate = (text: string, waitMs = 0, parts: TextPart[] = []) => {
     try {
-      if (!useTranslateStore.getState().locked)
+      if (!useTranslateStore.getState().locked) {
         useTranslateStore.getState().translate(text, false, waitMs)
+        linked.current = parts
+        bindSources(useTranslateStore.getState().sentences, parts)
+      }
     } catch (err) {
       useUIStore.getState().showToast((err as Error).message)
     }
@@ -49,19 +58,26 @@ export function SelectionPopover({ container }: { container: RefObject<HTMLDivEl
         hide()
         return
       }
-      const text = selected.toString().trim()
+      const parts = selectionParts(selected.getRangeAt(0), element)
+      const text = partsText(parts).trim()
       if (text.length < 2) {
         hide()
         return
       }
       const range = selected.getRangeAt(0)
-      setSelection({ text, rect: range.getBoundingClientRect() })
+      setSelection({
+        text,
+        rect: range.getBoundingClientRect(),
+        previous: useTranslateStore.getState().rawSelection,
+        parts,
+        previousParts: linked.current
+      })
       if (text.length > 6000) {
         useUIStore.getState().showToast('选区过长，请分段选择或使用全文总结')
         return
       }
       if (useSettingsStore.getState().config?.settings.autoTranslateOnSelect !== false)
-        translate(text, 300)
+        translate(text, 300, parts)
     }
     const clickOutside = (event: MouseEvent) => {
       if (!(event.target as HTMLElement).closest('[data-selection-popover]')) hide()
@@ -111,7 +127,7 @@ export function SelectionPopover({ container }: { container: RefObject<HTMLDivEl
         className={styles.translate}
         onClick={() => {
           clearTimeout(timer.current)
-          translate(selection.text)
+          translate(selection.text, 0, selection.parts)
         }}
       >
         翻译
@@ -136,6 +152,18 @@ export function SelectionPopover({ container }: { container: RefObject<HTMLDivEl
       >
         注释
       </button>
+      {selection.previous && selection.previous !== selection.text && (
+        <button
+          onClick={() =>
+            translate(selection.previous + '\n\n' + selection.text, 0, [
+              ...selection.previousParts,
+              ...selection.parts
+            ])
+          }
+        >
+          追加到上一段
+        </button>
+      )}
       <button
         onClick={() => {
           void navigator.clipboard

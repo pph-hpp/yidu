@@ -3,6 +3,8 @@ const { app, safeStorage } = require('electron')
 const fs = require('node:fs')
 const Store = require('electron-store')
 app.setName('yidu')
+if (app.commandLine.hasSwitch('user-data-dir'))
+  app.setPath('userData', app.commandLine.getSwitchValue('user-data-dir'))
 app.whenReady().then(() => {
   try {
     if (!safeStorage.isEncryptionAvailable()) throw new Error('系统加密不可用')
@@ -17,11 +19,21 @@ app.whenReady().then(() => {
     const urlLine = lines.find((s) => /^url\s*[:：=]/i.test(s))
     const modelLine = lines.find((s) => /^model\s*[:：=]/i.test(s))
     const keyLine = lines.find((s) => s !== urlLine && s !== modelLine)
-    const url = urlLine?.replace(/^url\s*[:：=]\s*/i, '').trim(),
+    let url = urlLine?.replace(/^url\s*[:：=]\s*/i, '').trim(),
       model = modelLine?.replace(/^model\s*[:：=]\s*/i, '').trim(),
       key = keyLine?.replace(/^(?:api[_ -]?key|key)\s*[:：=]\s*/i, '').trim()
-    if (!url || !model || !key || new URL(url).protocol !== 'https:')
+    if (!url || !model || !key || !['https:', 'http:'].includes(new URL(url).protocol))
       throw new Error('API 配置格式无效')
+    const parsed = new URL(url)
+    if (parsed.username || parsed.password || parsed.hash) throw new Error('URL 无效')
+    if (parsed.pathname === '/') url = parsed.origin + '/v1'
+    if (parsed.protocol === 'http:') {
+      if (!process.argv.includes('--allow-this-http')) throw new Error('未批准 HTTP')
+      fs.writeFileSync(
+        require('path').join(app.getPath('userData'), 'http-exceptions.json'),
+        JSON.stringify({ urls: [url] })
+      )
+    }
     const secrets = new Store({ name: 'secrets', defaults: { keys: {} } })
     const config = new Store({ name: 'config' })
     const data = config.store
@@ -40,7 +52,7 @@ app.whenReady().then(() => {
       )
     )
     console.log('API 配置已导入；密钥已使用系统加密存储。')
-    app.exit(0)
+    app.quit()
   } catch {
     console.error('API 配置导入失败；未输出文件内容。')
     app.exit(1)

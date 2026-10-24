@@ -37,6 +37,20 @@ export function Modal({
             e.stopPropagation()
             onClose()
           }
+          if (
+            e.key === 'Enter' &&
+            !(e.target instanceof HTMLTextAreaElement) &&
+            !(e.target instanceof HTMLButtonElement) &&
+            !(e.target instanceof HTMLSelectElement)
+          ) {
+            const primary = ref.current?.querySelector<HTMLButtonElement>(
+              'footer button.primary:not(:disabled)'
+            )
+            if (primary) {
+              e.preventDefault()
+              primary.click()
+            }
+          }
           if (e.key === 'Tab') {
             const items = [
               ...ref.current!.querySelectorAll<HTMLElement>(

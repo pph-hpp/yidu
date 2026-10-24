@@ -1,0 +1,35 @@
+appId: cn.yidu.reader
+productName: 译读
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - out/**/*
+  - resources/fonts/**/*
+  - resources/licenses/**/*
+  - package.json
+asar: true
+afterPack: scripts/after-pack.cjs
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.ico
+  artifactName: Yidu-Setup-${version}-${arch}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 译读
+  deleteAppDataOnUninstall: false
+fileAssociations:
+  - ext: pdf
+    name: 译读 PDF 文献
+    description: PDF 文献
+    role: Viewer
+  - ext: [md, markdown]
+    name: 译读 Markdown 文献
+    description: Markdown 文献
+    role: Viewer

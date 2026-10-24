@@ -1,3 +1,4 @@
+import { approvedHttpUrls } from '../http-exceptions'
 import { buildPrompt, validId, stringField, validateProfile } from '../../../shared/config'
 import type { ModelProfile } from '../../../shared/types'
 import type {
@@ -68,7 +69,7 @@ export class LLMService {
     })
   }
   async test(value: unknown): Promise<ConnectionResult> {
-    validateProfile(value)
+    validateProfile(value, approvedHttpUrls())
     const start = Date.now(),
       controller = new AbortController()
     try {

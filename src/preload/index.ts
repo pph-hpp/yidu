@@ -1,11 +1,27 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { IPC, type YiduAPI } from '../shared/ipc'
 function on<T>(channel: string, callback: (value: T) => void): () => void {
   const listener = (_event: Electron.IpcRendererEvent, value: T) => callback(value)
   ipcRenderer.on(channel, listener)
   return () => ipcRenderer.removeListener(channel, listener)
 }
+let pendingPaths: string[][] = []
+let openCallback: ((paths: string[]) => void) | undefined
+ipcRenderer.on(IPC.FILE_OPEN_PATH, (_event, paths: string[]) => {
+  if (openCallback) openCallback(paths)
+  else pendingPaths.push(paths)
+})
 const api: YiduAPI = {
+  recentFiles: () => ipcRenderer.invoke(IPC.FILE_RECENT),
+  getPathForFile: (file) => webUtils.getPathForFile(file),
+  onOpenPaths: (callback) => {
+    openCallback = callback
+    for (const paths of pendingPaths) callback(paths)
+    pendingPaths = []
+    return () => {
+      if (openCallback === callback) openCallback = undefined
+    }
+  },
   savePdf: (req) => ipcRenderer.invoke(IPC.PDF_SAVE, req),
   savePdfAs: (req) => ipcRenderer.invoke(IPC.PDF_SAVE_AS, req),
   onCloseRequest: (callback) => on(IPC.APP_CLOSE_REQUEST, callback),

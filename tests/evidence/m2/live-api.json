@@ -1,0 +1,19 @@
+{
+  "connection": {
+    "ok": false,
+    "code": "SERVER",
+    "message": "模型服务异常"
+  },
+  "translations": [
+    "1复制重译编辑Static timing analysis checks timing constraints.模型服务异常重试",
+    "2复制重译编辑Positive slack indicates that a timing requirement is satisfied.模型服务异常重试"
+  ],
+  "statuses": [
+    "error",
+    "error"
+  ],
+  "profileCount": 1,
+  "httpException": "仅用户批准的 API Base URL",
+  "plaintextInConfig": false,
+  "plaintextInSecrets": false
+}

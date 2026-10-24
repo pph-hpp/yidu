@@ -1,3 +1,9 @@
+import { useSettingsStore } from '../stores/settingsStore'
+import { useSummaryStore } from '../stores/summaryStore'
+import { useTranslateStore } from '../stores/translateStore'
+import { useUIStore } from '../stores/uiStore'
+import { selectionParts, partsText } from './selectionText'
+import { bindSources } from './sourceLink'
 import { useDocStore } from '../stores/docStore'
 import { useAnnotStore } from '../stores/annotStore'
 import { requestClose, saveDocument } from './fileActions'
@@ -11,6 +17,43 @@ export function registerShortcuts(openFile: () => void): () => void {
       id = state.activeId,
       key = event.key.toLowerCase()
     if (event.ctrlKey || event.metaKey) {
+      if (key === ',') {
+        event.preventDefault()
+        useSettingsStore.getState().open()
+        return
+      }
+      if (key === 'l') {
+        event.preventDefault()
+        useTranslateStore.getState().toggleLock()
+        return
+      }
+      if (key === 'm' && event.shiftKey) {
+        event.preventDefault()
+        const file = state.docs.find((d) => d.fileId === id)
+        if (file) void useSummaryStore.getState().start(file)
+        return
+      }
+      if (key === 'enter' && !typing && target.closest('[data-document-pane]')) {
+        event.preventDefault()
+        const selection = getSelection(),
+          container = document.querySelector<HTMLElement>('[data-document-pane]')
+        if (
+          selection?.rangeCount &&
+          container &&
+          container.contains(selection.anchorNode) &&
+          container.contains(selection.focusNode) &&
+          !useTranslateStore.getState().locked
+        ) {
+          const parts = selectionParts(selection.getRangeAt(0), container)
+          try {
+            useTranslateStore.getState().translate(partsText(parts))
+            bindSources(useTranslateStore.getState().sentences, parts)
+          } catch (e) {
+            useUIStore.getState().showToast((e as Error).message)
+          }
+        }
+        return
+      }
       if (key === 'o') {
         event.preventDefault()
         openFile()
@@ -49,6 +92,24 @@ export function registerShortcuts(openFile: () => void): () => void {
       return
     }
     if (typing || event.altKey || !target.closest('[data-document-pane]')) return
+    if (['PageUp', 'PageDown', 'Home', 'End'].includes(event.key)) {
+      const scroller = document.querySelector<HTMLElement>(
+        '[aria-label="PDF 文档"],[aria-label="Markdown 文档"]'
+      )
+      if (scroller) {
+        event.preventDefault()
+        scroller.scrollTo({
+          top:
+            event.key === 'Home'
+              ? 0
+              : event.key === 'End'
+                ? scroller.scrollHeight
+                : scroller.scrollTop +
+                  (event.key === 'PageUp' ? -1 : 1) * scroller.clientHeight * 0.9
+        })
+      }
+      return
+    }
     const tools: Record<string, EditTool> = {
       v: 'select',
       h: 'highlight',

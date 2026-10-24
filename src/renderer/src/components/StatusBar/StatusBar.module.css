@@ -8,3 +8,7 @@
   color: var(--text-secondary);
   font-size: var(--px-12);
 }
+
+.status {
+  justify-content: space-between;
+}

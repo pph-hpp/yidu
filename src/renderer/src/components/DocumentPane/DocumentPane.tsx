@@ -1,3 +1,4 @@
+import { RecentFiles } from './RecentFiles'
 import { useRef } from 'react'
 import type { OpenedFile } from '../../../../shared/types'
 import { PdfViewer } from '../PdfViewer/PdfViewer'
@@ -45,6 +46,7 @@ export function DocumentPane({
               打开文件
             </button>
           </div>
+          <RecentFiles />
         </div>
       )}
       {file && <SelectionPopover key={'selection-' + file.fileId} container={container} />}

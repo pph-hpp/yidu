@@ -39,3 +39,16 @@ it('仅拼接已启用背景，固定输出规则最后追加', () => {
   expect(text).not.toContain('禁用背景')
   expect(text).toContain('[编号]')
 })
+it('显式 HTTP 例外仅匹配完整 Base URL，不能扩展其他主机/端口/路径', () => {
+  const profile = defaultConfig().profiles[0],
+    allowed = ['http://example.org:8080/v1']
+  expect(() => validateProfile({ ...profile, baseUrl: allowed[0] }, allowed)).not.toThrow()
+  for (const baseUrl of [
+    'http://other.example/v1',
+    'http://example.org:8081/v1',
+    'http://example.org:8080/other',
+    'http://example.org:8080/v1?next=evil'
+  ])
+    expect(() => validateProfile({ ...profile, baseUrl }, allowed)).toThrow()
+  expect(() => validateProfile({ ...profile, id: '__proto__' })).toThrow()
+})

@@ -8,7 +8,8 @@ import {
   PDFNumber,
   PDFRef,
   StandardFonts,
-  type PDFFont
+  PDFFont,
+  CustomFontEmbedder
 } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { readFile } from 'node:fs/promises'
@@ -192,7 +193,11 @@ export async function writePdfAnnotations(
           if (!unicode) {
             pdf.registerFontkit(fontkit)
             const path = fontPath || join(__dirname, '../../resources/fonts/NotoSansSC-Regular.ttf')
-            unicode = await pdf.embedFont(await readFile(path), { subset: true })
+            const fontBytes=await readFile(path),customName='YiduNotoSansSC400V1'
+            const existing=pdf.context.enumerateIndirectObjects().find(([,obj])=>obj instanceof PDFDict&&obj.get(name('BaseFont'))?.toString()==='/'+customName)
+            // Full TrueType embedding avoids fontkit CJK subset glyph loss in PDFium.
+            // Reuse the complete embedded font on subsequent saves to avoid 6 MB growth per save.
+            unicode=existing?PDFFont.of(existing[0],pdf,await CustomFontEmbedder.for(fontkit,fontBytes,customName)):await pdf.embedFont(fontBytes,{subset:false,customName})
           }
           font = unicode
         } else font = latin ??= await pdf.embedFont(StandardFonts.TimesRoman)
@@ -202,7 +207,7 @@ export async function writePdfAnnotations(
         resources = context.obj({ Font: { Helv: font.ref } })
         const chars = Array.from(a.text.replace(/\s+/g, ' ').trim())
         let offset = 0
-        for (const q of a.quads) {
+        for (const [quadIndex,q] of a.quads.entries()) {
           const b = bounds([q]),
             width = b[2] - b[0],
             height = b[3] - b[1]
@@ -213,6 +218,7 @@ export async function writePdfAnnotations(
           )
             end++
           if (end === offset && offset < chars.length) end++
+          if(quadIndex===a.quads.length-1)end=chars.length
           const text = chars.slice(offset, end).join('')
           offset = end
           operators +=
@@ -222,7 +228,7 @@ export async function writePdfAnnotations(
             [b[0] - x, b[1] - y, width, height].join(' ') +
             ' re W n BT /Helv ' +
             a.fontSize +
-            ' Tf ' +
+            ' Tf '+Math.min(100,100*width/Math.max(1,font.widthOfTextAtSize(text,a.fontSize)))+' Tz ' +
             c.join(' ') +
             ' rg 1 0 0 1 ' +
             (b[0] - x) +
@@ -276,3 +282,4 @@ export async function writePdfAnnotations(
   }
   return pdf.save()
 }
+
