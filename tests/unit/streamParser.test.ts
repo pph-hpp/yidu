@@ -31,6 +31,17 @@ describe('流式编号解析', () => {
     empty.push('无编号')
     expect(empty.finish()).toEqual([1, 2])
   })
+  it('片段开头的句内引用 [79] 不是编号', () => {
+    const p = new StreamParser(2, () => {})
+    for (const c of ['[1] 追溯到 Cercignani', ' [79] 和 Lanford', ' [202]。\n[2] 第二']) p.push(c)
+    expect(p.finish()).toEqual([])
+    expect(p.values.get(1)?.trim()).toBe('追溯到 Cercignani [79] 和 Lanford [202]。')
+    expect(p.values.get(2)?.trim()).toBe('第二')
+    const chars = new StreamParser(2, () => {})
+    for (const c of '[1] 见 [79] 文献\n[2] 二') chars.push(c)
+    expect(chars.finish()).toEqual([])
+    expect(chars.values.get(1)?.trim()).toBe('见 [79] 文献')
+  })
   it('SSE CRLF 和 UTF-8 字符跨字节，支持多行 data', async () => {
     const bytes = new TextEncoder().encode(
       'data: {"text":"中文"}\r\n\r\ndata: one\ndata: two\n\ndata: [DONE]\n\n'

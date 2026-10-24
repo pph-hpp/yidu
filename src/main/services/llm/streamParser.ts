@@ -2,6 +2,9 @@
 export class StreamParser {
   private buffer = ''
   private current: number | null = null
+  // Whether the buffer starts at a line start: `^` alone would also match a mid-line
+  // citation such as " [79]" that happens to begin a new chunk.
+  private lineStart = true
   readonly values = new Map<number, string>()
   constructor(
     private count: number,
@@ -22,18 +25,27 @@ export class StreamParser {
     this.values.set(this.current, (this.values.get(this.current) || '') + text)
     this.emit(this.current, text)
   }
+  private atLineStart(index: number): boolean {
+    return index > 0 || this.buffer[0] === '\n' || this.lineStart
+  }
+  private consume(length: number, marker = false): void {
+    if (!length) return
+    if (!marker) this.output(this.buffer.slice(0, length))
+    this.lineStart = !marker && this.buffer[length - 1] === '\n'
+    this.buffer = this.buffer.slice(length)
+  }
   private drain(final: boolean): void {
     const marker = /(?:^|\n)\s*\[(\d+)\][ \t]*/g
-    let cursor = 0
     for (let m; (m = marker.exec(this.buffer));) {
-      this.output(this.buffer.slice(cursor, m.index))
+      if (!this.atLineStart(m.index)) continue
+      this.consume(m.index)
+      this.consume(m[0].length, true)
       this.current = Number(m[1])
-      cursor = marker.lastIndex
+      marker.lastIndex = 0
     }
-    this.buffer = this.buffer.slice(cursor)
     const partial = /(?:^|\n)[ \t]*\[?\d*$/.exec(this.buffer)
-    const cut = !final && partial ? partial.index : this.buffer.length
-    this.output(this.buffer.slice(0, cut))
-    this.buffer = this.buffer.slice(cut)
+    const cut =
+      !final && partial && this.atLineStart(partial.index) ? partial.index : this.buffer.length
+    this.consume(cut)
   }
 }
