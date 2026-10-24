@@ -81,3 +81,11 @@ node scripts/verify-live-summary.cjs --paper
 - Acrobat 互操作、实际安装后的资源管理器文件关联、在线设计画布逐像素比较尚未验证；OpenAI 官方和 Ollama 的真实端点未提供。
 - 文档指定的 Electron 33 和构建/测试工具存在依赖审计告警；生产依赖筛选仅余 2 个 low，但 Electron 虽列在 devDependencies 中仍会随应用发布。详细审计见验收报告，不能把生产筛选结果解释为整个安装包没有漏洞。
 - Windows 构建缓存首次解压 winCodeSign 时可能需要符号链接权限。本机已保留官方归档中的 Windows 工具并排除不使用的 Darwin 条目后成功构建，没有修改应用安全配置。
+
+单个 PDF 总结流程的本地诊断（仅使用本机模拟模型，不调用配置中的真实 API，不生成真实论文总结）：
+
+```powershell
+node scripts/verify-summary-file.cjs 'E:\path\paper.pdf'
+```
+
+此脚本验证全文提取、分块、汇总和保存，以及所有页码是否进入请求。临时配置和模拟结果存放在忽略的 `.local/` 下，原 PDF 不会写回或加入版本库。

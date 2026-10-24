@@ -52,3 +52,10 @@ it('显式 HTTP 例外仅匹配完整 Base URL，不能扩展其他主机/端口
     expect(() => validateProfile({ ...profile, baseUrl }, allowed)).toThrow()
   expect(() => validateProfile({ ...profile, id: '__proto__' })).toThrow()
 })
+
+it('文本安全校验继续拒绝 NUL、非字符串及过长输入', async () => {
+  const { stringField } = await import('../../src/shared/config')
+  expect(() => stringField('text\0artifact')).toThrow('文本参数无效')
+  expect(() => stringField({ text: 'value' })).toThrow('文本参数无效')
+  expect(() => stringField('long text', 4)).toThrow('文本参数无效')
+})

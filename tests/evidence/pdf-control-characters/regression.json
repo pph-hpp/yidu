@@ -1,0 +1,12 @@
+{
+  "typecheck": "passed",
+  "unitTests": 61,
+  "e2e": {
+    "startTime": "2026-10-24T08:17:26.208Z",
+    "duration": 69693.757,
+    "expected": 25,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
