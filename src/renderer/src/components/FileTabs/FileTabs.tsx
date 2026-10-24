@@ -1,7 +1,10 @@
+import { requestClose } from '../../lib/fileActions'
+import { useAnnotStore, isDirty } from '../../stores/annotStore'
 import { useDocStore } from '../../stores/docStore'
 import { Icon } from '../Icon'
 import styles from './FileTabs.module.css'
 export function FileTabs({ openFile }: { openFile(): void }) {
+  const edits = useAnnotStore((s) => s.files)
   const docs = useDocStore((s) => s.docs),
     activeId = useDocStore((s) => s.activeId)
   return (
@@ -12,7 +15,7 @@ export function FileTabs({ openFile }: { openFile(): void }) {
           className={styles.tab}
           data-active={activeId === file.fileId}
           onAuxClick={(e) => {
-            if (e.button === 1) useDocStore.getState().close(file.fileId)
+            if (e.button === 1) void requestClose(file.fileId)
           }}
         >
           <button
@@ -23,11 +26,14 @@ export function FileTabs({ openFile }: { openFile(): void }) {
           >
             <Icon name={file.kind === 'pdf' ? 'file' : 'markdown'} size={14} />
             <span>{file.name}</span>
+            {isDirty(edits[file.fileId]) && (
+              <i className={styles.dirty} title="有未保存的修改" aria-label="有未保存的修改" />
+            )}
           </button>
           <button
             className={styles.close}
             aria-label={'关闭 ' + file.name}
-            onClick={() => useDocStore.getState().close(file.fileId)}
+            onClick={() => void requestClose(file.fileId)}
           >
             <Icon name="close" size={12} />
           </button>

@@ -1,3 +1,4 @@
+import type { PdfSaveRequest, PdfSaveResult } from './annotations'
 import type { SummaryRequest, SummaryProgress, SummaryResult } from './summary'
 import type { AppConfig } from './config'
 import type {
@@ -37,6 +38,10 @@ export interface OpenPathRequest {
 }
 // Expose individual validated operations, never generic IPC.
 export interface YiduAPI {
+  savePdf(req: PdfSaveRequest): Promise<PdfSaveResult>
+  savePdfAs(req: PdfSaveRequest): Promise<PdfSaveResult>
+  onCloseRequest(callback: () => void): () => void
+  confirmClose(): Promise<void>
   startSummary(req: SummaryRequest): Promise<void>
   cancelSummary(req: { jobId: string }): Promise<void>
   saveSummary(req: {

@@ -1,5 +1,10 @@
+import type { PageViewport } from 'pdfjs-dist/types/src/display/display_utils'
+import { AnnotationLayer } from './AnnotationLayer'
+import { renderNativeAnnotations } from './NativeAnnotations'
+import { pageClick } from '../../lib/annotationActions'
+import { useUIStore } from '../../stores/uiStore'
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
-import { TextLayer, type PDFDocumentProxy, type RenderTask } from 'pdfjs-dist'
+import { AnnotationMode, TextLayer, type PDFDocumentProxy, type RenderTask } from 'pdfjs-dist'
 import styles from './PdfViewer.module.css'
 export interface PageSize {
   width: number
@@ -7,12 +12,14 @@ export interface PageSize {
 }
 export function PdfPage({
   pdf,
+  fileId,
   number,
   size,
   zoom,
   root
 }: {
   pdf: PDFDocumentProxy
+  fileId: string
   number: number
   size: PageSize
   zoom: number
@@ -20,6 +27,8 @@ export function PdfPage({
 }) {
   const pageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const nativeRef = useRef<HTMLDivElement>(null)
+  const [viewportState, setViewportState] = useState<PageViewport>()
   const textRef = useRef<HTMLDivElement>(null)
   const renderQueue = useRef<Promise<void>>(Promise.resolve())
   const [render, setRender] = useState(false)
@@ -58,6 +67,7 @@ export function PdfPage({
       canvas.width = 0
       canvas.height = 0
       container.replaceChildren()
+      nativeRef.current?.replaceChildren()
       return
     }
     // Reusing a canvas requires the cancelled render promise to settle first.
@@ -68,21 +78,29 @@ export function PdfPage({
         const page = await pdf.getPage(number)
         if (cancelled) return
         const viewport = page.getViewport({ scale: zoom })
+        setViewportState(viewport)
+        nativeRef.current?.replaceChildren()
         const dpr = window.devicePixelRatio || 1
         canvas.width = Math.ceil(viewport.width * dpr)
         canvas.height = Math.ceil(viewport.height * dpr)
         container.replaceChildren()
+        nativeRef.current?.replaceChildren()
         renderTask = page.render({
           canvasContext: canvas.getContext('2d')!,
           viewport,
-          transform: [dpr, 0, 0, dpr, 0, 0]
+          transform: [dpr, 0, 0, dpr, 0, 0],
+          annotationMode: AnnotationMode.ENABLE_STORAGE
         })
         textLayer = new TextLayer({
           textContentSource: page.streamTextContent(),
           container,
           viewport
         })
-        await Promise.all([renderTask.promise, textLayer.render()])
+        await Promise.all([
+          renderTask.promise,
+          textLayer.render(),
+          renderNativeAnnotations(nativeRef.current!, pdf, page, viewport)
+        ])
         if (cancelled) return
         const end = document.createElement('div')
         end.className = 'endOfContent'
@@ -98,6 +116,7 @@ export function PdfPage({
       renderTask?.cancel()
       textLayer?.cancel()
       container.replaceChildren()
+      nativeRef.current?.replaceChildren()
       // Release backing storage after PDF.js has relinquished the canvas.
       void work.then(() => {
         canvas.width = 0
@@ -116,6 +135,11 @@ export function PdfPage({
       className={styles.page}
       data-page={number}
       data-ready={ready}
+      onMouseUp={(event) => {
+        void pageClick(event.nativeEvent, fileId, number).catch(() =>
+          useUIStore.getState().showToast('无法处理当前标注')
+        )
+      }}
       style={
         {
           width: size.width * zoom,
@@ -125,6 +149,10 @@ export function PdfPage({
       }
     >
       <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
+      {render && viewportState && (
+        <AnnotationLayer fileId={fileId} page={number} viewport={viewportState} pageRef={pageRef} />
+      )}
+      <div ref={nativeRef} className="annotationLayer" data-native-annotations />
       <div
         ref={textRef}
         className="textLayer"

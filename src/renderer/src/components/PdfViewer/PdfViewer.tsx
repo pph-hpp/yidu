@@ -1,3 +1,4 @@
+import { initializeAnnotations } from './annotationData'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 import type { OpenedFile } from '../../../../shared/types'
@@ -18,6 +19,7 @@ export function PdfViewer({ file }: { file: OpenedFile }) {
     const entry = getPdf(file)
     void entry.promise
       .then(async (document) => {
+        await initializeAnnotations(document, file.fileId)
         const first = (await document.getPage(1)).getViewport({ scale: 1 })
         if (disposed) return
         setPdf(document)
@@ -149,7 +151,15 @@ export function PdfViewer({ file }: { file: OpenedFile }) {
         </div>
       ) : (
         sizes.map((size, i) => (
-          <PdfPage key={i} pdf={pdf} number={i + 1} size={size} zoom={zoom} root={root} />
+          <PdfPage
+            key={i}
+            fileId={file.fileId}
+            pdf={pdf}
+            number={i + 1}
+            size={size}
+            zoom={zoom}
+            root={root}
+          />
         ))
       )}
     </div>

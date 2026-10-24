@@ -88,3 +88,14 @@
     padding: 0 var(--px-8);
   }
 }
+
+.opacity {
+  display: flex;
+  align-items: center;
+  font-size: var(--px-12);
+  gap: var(--px-6);
+}
+.opacity input {
+  width: var(--px-80);
+  accent-color: var(--accent);
+}

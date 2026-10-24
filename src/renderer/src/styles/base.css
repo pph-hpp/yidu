@@ -87,3 +87,13 @@ button.primary:hover {
     scroll-behavior: auto !important;
   }
 }
+
+[data-native-annotations] {
+  z-index: 3;
+}
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('../../../../resources/fonts/NotoSansSC-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}

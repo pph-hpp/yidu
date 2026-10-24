@@ -1,8 +1,16 @@
+import { useAnnotStore } from '../../stores/annotStore'
+import type { EditTool } from '../../../../shared/annotations'
+import { safeAnnotate } from '../../lib/annotationActions'
 import { useState } from 'react'
 import { useDocStore } from '../../stores/docStore'
 import { Icon, type IconName } from '../Icon'
 import styles from './EditToolbar.module.css'
 export function EditToolbar() {
+  const activeFile = useDocStore((s) => s.docs.find((d) => d.fileId === s.activeId)),
+    edit = useAnnotStore(),
+    entry = activeFile ? edit.files[activeFile.fileId] : undefined
+  const enabled = activeFile?.kind === 'pdf' && !!entry?.loaded && !entry.protected
+  const toolNames: EditTool[] = ['select', 'highlight', 'background', 'textColor', 'note']
   const zoom = useDocStore((s) => s.zoom)
   const [presets, setPresets] = useState(false)
   const tools: [IconName, string][] = [
@@ -18,9 +26,21 @@ export function EditToolbar() {
         {tools.map(([icon, label], i) => (
           <button
             key={icon}
-            disabled={i !== 0}
-            className={i === 0 ? styles.active : ''}
-            title={i ? label + '（PDF 编辑将在 M4 实现）' : label}
+            disabled={i !== 0 && !enabled}
+            className={edit.tool === toolNames[i] ? styles.active : ''}
+            aria-pressed={edit.tool === toolNames[i]}
+            onClick={() => {
+              if (toolNames[i] === 'note' && !window.getSelection()?.isCollapsed)
+                safeAnnotate('note')
+              else edit.setTool(toolNames[i])
+            }}
+            title={
+              i && !enabled
+                ? entry?.protected
+                  ? '该 PDF 受保护，只能阅读'
+                  : '仅 PDF 支持编辑'
+                : label
+            }
             aria-label={label}
           >
             <Icon name={icon} />
@@ -35,16 +55,45 @@ export function EditToolbar() {
             key={color}
             role="radio"
             aria-label={['黄色', '绿色', '蓝色', '粉色', '红色'][i]}
-            aria-checked={i === 0}
-            disabled
+            aria-checked={edit.colors[edit.tool] === color}
+            disabled={!enabled || edit.tool === 'select'}
+            onClick={() => edit.setColor(color)}
             style={{ background: 'var(--mark-' + color + ')' }}
           />
         ))}
       </div>
-      <button disabled aria-label="撤销" title="撤销">
+      {edit.tool === 'background' && enabled && (
+        <label className={styles.opacity}>
+          透明度
+          <input
+            type="range"
+            aria-label="背景色透明度"
+            min="0"
+            max="1"
+            step=".05"
+            value={edit.opacity}
+            onChange={(e) => edit.setOpacity(Number(e.target.value))}
+          />
+        </label>
+      )}
+      <button
+        disabled={!enabled || !entry?.undo.length}
+        aria-label="撤销"
+        title="撤销"
+        onClick={() => {
+          if (activeFile) edit.undo(activeFile.fileId)
+        }}
+      >
         <Icon name="undo" />
       </button>
-      <button disabled aria-label="重做" title="重做">
+      <button
+        disabled={!enabled || !entry?.redo.length}
+        aria-label="重做"
+        title="重做"
+        onClick={() => {
+          if (activeFile) edit.redo(activeFile.fileId)
+        }}
+      >
         <Icon name="redo" />
       </button>
       <div className={styles.zoom}>

@@ -92,3 +92,10 @@
 :root {
   --px-120: 120px;
 }
+
+:root {
+  --px-7: 7px;
+  --px-220: 220px;
+  --note-ink: #92400e;
+  --pdf-paper: #ffffff;
+}

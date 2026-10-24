@@ -6,6 +6,10 @@ function on<T>(channel: string, callback: (value: T) => void): () => void {
   return () => ipcRenderer.removeListener(channel, listener)
 }
 const api: YiduAPI = {
+  savePdf: (req) => ipcRenderer.invoke(IPC.PDF_SAVE, req),
+  savePdfAs: (req) => ipcRenderer.invoke(IPC.PDF_SAVE_AS, req),
+  onCloseRequest: (callback) => on(IPC.APP_CLOSE_REQUEST, callback),
+  confirmClose: () => ipcRenderer.invoke(IPC.APP_CLOSE_CONFIRMED),
   startSummary: (req) => ipcRenderer.invoke(IPC.SUMMARY_START, req),
   cancelSummary: (req) => ipcRenderer.invoke(IPC.SUMMARY_CANCEL, req),
   saveSummary: (req) => ipcRenderer.invoke(IPC.SUMMARY_SAVE, req),

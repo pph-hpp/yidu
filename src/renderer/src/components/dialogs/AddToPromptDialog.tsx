@@ -33,22 +33,20 @@ export function AddToPromptDialog() {
         enabled: true,
         createdAt: new Date().toISOString()
       }
-      await useSettingsStore
-        .getState()
-        .save({
-          ...config,
-          presets: config.presets.map((p) =>
-            p.id === preset.id
-              ? {
-                  ...p,
-                  snippets: [
-                    ...(replace ? p.snippets.filter((n) => n.source !== s.file!.path) : p.snippets),
-                    snippet
-                  ]
-                }
-              : p
-          )
-        })
+      await useSettingsStore.getState().save({
+        ...config,
+        presets: config.presets.map((p) =>
+          p.id === preset.id
+            ? {
+                ...p,
+                snippets: [
+                  ...(replace ? p.snippets.filter((n) => n.source !== s.file!.path) : p.snippets),
+                  snippet
+                ]
+              }
+            : p
+        )
+      })
       useUIStore.getState().showToast('已加入提示词')
       s.close()
     } catch {

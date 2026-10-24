@@ -1,3 +1,6 @@
+import { bindCloseEvents } from './lib/fileActions'
+import { UnsavedChangesDialog } from './components/dialogs/UnsavedChangesDialog'
+import { useAnnotStore } from './stores/annotStore'
 import { bindSummaryEvents } from './stores/summaryStore'
 import { SummaryProgressDialog } from './components/dialogs/SummaryProgressDialog'
 import { AddToPromptDialog } from './components/dialogs/AddToPromptDialog'
@@ -29,10 +32,12 @@ export function App() {
           .setMode(useSettingsStore.getState().config!.settings.defaultMode)
       )
     const offTranslation = bindTranslationEvents(),
-      offSummary = bindSummaryEvents()
+      offSummary = bindSummaryEvents(),
+      offClose = bindCloseEvents()
     return () => {
       offTranslation()
       offSummary()
+      offClose()
     }
   }, [])
   const toast = useUIStore((s) => s.toast)
@@ -55,6 +60,7 @@ export function App() {
   useEffect(() => registerShortcuts(() => void openFile()), [openFile])
   useEffect(() => releaseClosedPdfs(docs.map((d) => d.fileId)), [docs])
   useEffect(() => {
+    useAnnotStore.getState().setTool('select')
     useTranslateStore.getState().clear()
     setError('')
   }, [activeId])
@@ -82,6 +88,7 @@ export function App() {
         <TranslatePane />
       </div>
       <StatusBar />
+      <UnsavedChangesDialog />
       <SummaryProgressDialog />
       <AddToPromptDialog />
       {settings.opened && settings.config && <SettingsDialog />}

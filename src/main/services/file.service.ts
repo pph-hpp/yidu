@@ -1,7 +1,14 @@
-import {validId} from '../../shared/config'
-import {validateAnnots,type PdfSaveRequest} from '../../shared/annotations'
-import {atomicWrite} from './atomic-write'
-export class PdfSaveError extends Error {constructor(public code:string,message:string){super(message)}}
+import { validId } from '../../shared/config'
+import { validateAnnots, type PdfSaveRequest } from '../../shared/annotations'
+import { atomicWrite } from './atomic-write'
+export class PdfSaveError extends Error {
+  constructor(
+    public code: string,
+    message: string
+  ) {
+    super(message)
+  }
+}
 import { open, realpath, stat } from 'node:fs/promises'
 import { basename, extname, isAbsolute, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -26,7 +33,7 @@ export function validateOpenPath(req: unknown): string {
 export class FileService {
   readonly paths = new Map<string, string>()
   private ids = new Map<string, string>()
-  private mtimes = new Map<string,number>()
+  private mtimes = new Map<string, number>()
   private saving = new Set<string>()
   async openPath(req: unknown): Promise<OpenedFile> {
     const path = await realpath(validateOpenPath(req))
@@ -51,8 +58,11 @@ export class FileService {
       const fileId = this.ids.get(key) ?? randomUUID()
       this.ids.set(key, fileId)
       this.paths.set(fileId, path)
-      this.mtimes.set(fileId,stat.mtimeMs)
-      const bytes=kind==='pdf'?await(await import('./pdf-writer')).preparePdfForReading(new Uint8Array(data)):undefined
+      this.mtimes.set(fileId, stat.mtimeMs)
+      const bytes =
+        kind === 'pdf'
+          ? await (await import('./pdf-writer')).preparePdfForReading(new Uint8Array(data))
+          : undefined
       return {
         fileId,
         path,
@@ -65,38 +75,55 @@ export class FileService {
       await handle.close()
     }
   }
-  async save(value:unknown,destination?:string,overwrite=false):Promise<{path:string;mtimeMs:number}>{
-    if(!value||typeof value!=='object')throw new PdfSaveError('INVALID','保存参数无效')
-    const req=value as PdfSaveRequest;validId(req.fileId);validateAnnots(req.annots)
-    const source=this.paths.get(req.fileId)
-    if(!source||extname(source).toLowerCase()!=='.pdf')throw new PdfSaveError('INVALID','只能保存已打开的 PDF')
-    if(this.saving.has(req.fileId))throw new PdfSaveError('BUSY','文件正在保存，请稍候')
-    const target=destination?resolve(destination):source
-    if(extname(target).toLowerCase()!=='.pdf')throw new PdfSaveError('INVALID','保存文件必须使用 .pdf 扩展名')
-    for(const[id,path]of this.paths)if(id!==req.fileId&&path.toLowerCase()===target.toLowerCase())throw new PdfSaveError('BUSY','目标文件已在其他标签打开')
+  async save(
+    value: unknown,
+    destination?: string,
+    overwrite = false
+  ): Promise<{ path: string; mtimeMs: number }> {
+    if (!value || typeof value !== 'object') throw new PdfSaveError('INVALID', '保存参数无效')
+    const req = value as PdfSaveRequest
+    validId(req.fileId)
+    validateAnnots(req.annots)
+    const source = this.paths.get(req.fileId)
+    if (!source || extname(source).toLowerCase() !== '.pdf')
+      throw new PdfSaveError('INVALID', '只能保存已打开的 PDF')
+    if (this.saving.has(req.fileId)) throw new PdfSaveError('BUSY', '文件正在保存，请稍候')
+    const target = destination ? resolve(destination) : source
+    if (extname(target).toLowerCase() !== '.pdf')
+      throw new PdfSaveError('INVALID', '保存文件必须使用 .pdf 扩展名')
+    for (const [id, path] of this.paths)
+      if (id !== req.fileId && path.toLowerCase() === target.toLowerCase())
+        throw new PdfSaveError('BUSY', '目标文件已在其他标签打开')
     this.saving.add(req.fileId)
     try {
-      const handle=await open(source,'r')
-      let original:Uint8Array,mtime:number
+      const handle = await open(source, 'r')
+      let original: Uint8Array, mtime: number
       try {
-        const info=await handle.stat();mtime=info.mtimeMs
-        if(info.size>MAX_FILE_BYTES)throw new PdfSaveError('SIZE','文件超过 200 MB')
-        if(!destination&&!overwrite&&mtime!==this.mtimes.get(req.fileId))throw new PdfSaveError('EXTERNAL_CHANGE','文件已被其他程序修改')
-        original=new Uint8Array(await handle.readFile())
-        if((await handle.stat()).mtimeMs!==mtime)throw new PdfSaveError('EXTERNAL_CHANGE','读取期间文件已被其他程序修改')
-      }finally{await handle.close()}
-      const bytes=await(await import('./pdf-writer')).writePdfAnnotations(original,req.annots)
-      await atomicWrite(target,bytes,async()=>{
-        if((await stat(source)).mtimeMs!==mtime)throw new PdfSaveError('EXTERNAL_CHANGE','保存期间文件已被其他程序修改')
+        const info = await handle.stat()
+        mtime = info.mtimeMs
+        if (info.size > MAX_FILE_BYTES) throw new PdfSaveError('SIZE', '文件超过 200 MB')
+        if (!destination && !overwrite && mtime !== this.mtimes.get(req.fileId))
+          throw new PdfSaveError('EXTERNAL_CHANGE', '文件已被其他程序修改')
+        original = new Uint8Array(await handle.readFile())
+        if ((await handle.stat()).mtimeMs !== mtime)
+          throw new PdfSaveError('EXTERNAL_CHANGE', '读取期间文件已被其他程序修改')
+      } finally {
+        await handle.close()
+      }
+      const bytes = await (await import('./pdf-writer')).writePdfAnnotations(original, req.annots)
+      await atomicWrite(target, bytes, async () => {
+        if ((await stat(source)).mtimeMs !== mtime)
+          throw new PdfSaveError('EXTERNAL_CHANGE', '保存期间文件已被其他程序修改')
       })
-      const modified=(await stat(target)).mtimeMs
-      this.mtimes.set(req.fileId,modified);this.paths.set(req.fileId,target)
-      const key=(p:string)=>process.platform==='win32'?p.toLowerCase():p
-      this.ids.delete(key(source));this.ids.set(key(target),req.fileId)
-      return {path:target,mtimeMs:modified}
-    }finally{this.saving.delete(req.fileId)}
+      const modified = (await stat(target)).mtimeMs
+      this.mtimes.set(req.fileId, modified)
+      this.paths.set(req.fileId, target)
+      const key = (p: string) => (process.platform === 'win32' ? p.toLowerCase() : p)
+      this.ids.delete(key(source))
+      this.ids.set(key(target), req.fileId)
+      return { path: target, mtimeMs: modified }
+    } finally {
+      this.saving.delete(req.fileId)
+    }
   }
-
 }
-
-

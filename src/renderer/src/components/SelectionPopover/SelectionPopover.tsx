@@ -1,3 +1,6 @@
+import { useAnnotStore } from '../../stores/annotStore'
+import { useDocStore } from '../../stores/docStore'
+import { safeAnnotate } from '../../lib/annotationActions'
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useTranslateStore } from '../../stores/translateStore'
@@ -8,6 +11,11 @@ interface SelectionData {
   rect: DOMRect
 }
 export function SelectionPopover({ container }: { container: RefObject<HTMLDivElement> }) {
+  const activeFile = useDocStore((s) => s.docs.find((d) => d.fileId === s.activeId))
+  const protectedFile = useAnnotStore((s) =>
+    activeFile ? s.files[activeFile.fileId]?.protected : true
+  )
+  const canEdit = activeFile?.kind === 'pdf' && !protectedFile
   const [selection, setSelection] = useState<SelectionData>()
   const [position, setPosition] = useState({ left: 0, top: 0 })
   const popover = useRef<HTMLDivElement>(null)
@@ -30,6 +38,7 @@ export function SelectionPopover({ container }: { container: RefObject<HTMLDivEl
       if (event instanceof KeyboardEvent && !event.shiftKey) return
       if ((event.target as HTMLElement).closest('[data-selection-popover]')) return
       clearTimeout(timer.current)
+      if (useAnnotStore.getState().tool !== 'select') return
       const selected = window.getSelection()
       if (
         !selected?.rangeCount ||
@@ -107,10 +116,24 @@ export function SelectionPopover({ container }: { container: RefObject<HTMLDivEl
       >
         翻译
       </button>
-      <button disabled title="PDF 编辑将在 M4 实现">
+      <button
+        disabled={!canEdit}
+        title={canEdit ? '高亮选区' : '仅未受保护的 PDF 支持编辑'}
+        onClick={() => {
+          safeAnnotate('highlight')
+          setSelection(undefined)
+        }}
+      >
         高亮
       </button>
-      <button disabled title="PDF 编辑将在 M4 实现">
+      <button
+        disabled={!canEdit}
+        title={canEdit ? '注释选区' : '仅未受保护的 PDF 支持编辑'}
+        onClick={() => {
+          safeAnnotate('note')
+          setSelection(undefined)
+        }}
+      >
         注释
       </button>
       <button

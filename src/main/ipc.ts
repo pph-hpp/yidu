@@ -7,9 +7,13 @@ import { IPC } from '../shared/ipc'
 import { ConfigService } from './services/config.service'
 import { SecretService } from './services/secret.service'
 import { LLMService, validateTranslate } from './services/llm/llm.service'
-import { FileService } from './services/file.service'
+import { FileService, PdfSaveError } from './services/file.service'
 import { isAppPage } from './security'
-export function registerIPC(win: BrowserWindow, appUrl: string): void {
+export function registerIPC(
+  win: BrowserWindow,
+  appUrl: string,
+  closeConfirmed: () => void = () => win.close()
+): void {
   const files = new FileService()
   const config = new ConfigService(),
     secrets = new SecretService(),
@@ -73,6 +77,57 @@ export function registerIPC(win: BrowserWindow, appUrl: string): void {
     if (result.canceled || !result.filePath) return { ok: false }
     await writeFile(result.filePath, p.markdown, 'utf8')
     return { ok: true, path: result.filePath }
+  })
+  const saveAs = async (arg: unknown) => {
+    const source = files.paths.get(payload(arg).fileId as string)
+    if (!source) throw new Error('文件未打开')
+    const result = await dialog.showSaveDialog(win, {
+      title: 'PDF 另存为',
+      defaultPath: source,
+      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+    })
+    if (result.canceled || !result.filePath)
+      return { ok: false, code: 'CANCELED', message: '已取消保存' }
+    return { ok: true, ...(await files.save(arg, result.filePath, true)) }
+  }
+  const savePdf = async (arg: unknown, asCopy: boolean) => {
+    try {
+      if (asCopy) return await saveAs(arg)
+      try {
+        return { ok: true, ...(await files.save(arg)) }
+      } catch (e) {
+        if (!(e instanceof PdfSaveError) || e.code !== 'EXTERNAL_CHANGE') throw e
+        const result = await dialog.showMessageBox(win, {
+          type: 'warning',
+          title: '文件已被其他程序修改',
+          message: '文件已被其他程序修改',
+          detail: '请选择覆盖、另存为或取消。',
+          buttons: ['覆盖', '另存为', '取消'],
+          defaultId: 2,
+          cancelId: 2
+        })
+        if (result.response === 0) return { ok: true, ...(await files.save(arg, undefined, true)) }
+        if (result.response === 1) return await saveAs(arg)
+        return { ok: false, code: 'CANCELED', message: '已取消保存' }
+      }
+    } catch (e) {
+      const code = (e as { code?: string }).code || 'SAVE_FAILED'
+      return {
+        ok: false,
+        code,
+        message: ['EBUSY', 'EPERM', 'EACCES'].includes(code)
+          ? '文件正被其他程序使用，请关闭后重试，或另存为'
+          : e instanceof PdfSaveError
+            ? e.message
+            : '保存失败，请检查文件权限或选择另存为'
+      }
+    }
+  }
+  handle(IPC.PDF_SAVE, async (arg) => savePdf(arg, false))
+  handle(IPC.PDF_SAVE_AS, async (arg) => savePdf(arg, true))
+  handle(IPC.APP_CLOSE_CONFIRMED, async (arg) => {
+    if (arg !== undefined) throw new Error('关闭不接受参数')
+    closeConfirmed()
   })
   handle(IPC.CONFIG_GET, async () => config.get())
   handle(IPC.CONFIG_SET, async (arg) => config.set(arg))

@@ -48,3 +48,11 @@
   min-width: var(--px-34);
   height: var(--px-34);
 }
+
+.dirty {
+  width: var(--px-7);
+  height: var(--px-7);
+  border-radius: 50%;
+  background: var(--warn);
+  flex-shrink: 0;
+}
