@@ -1,4 +1,12 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode
+} from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../Icon'
 import styles from './Select.module.css'
@@ -7,6 +15,8 @@ export interface SelectOption<T extends string = string> {
   value: T
   label: string
   disabled?: boolean
+  /** 分组标题：与上一项不同时在该项前显示，标题本身不可选 */
+  group?: string
 }
 
 // 原生 <select> 的弹出列表由系统绘制，行高、字号、间距都无法随设计 token 调整，
@@ -86,7 +96,8 @@ export function Select<T extends string>({
         gap = 4
       el.style.minWidth = Math.max(r.width, variant === 'field' ? 0 : 168) + 'px'
       el.style.maxHeight = ''
-      const height = el.offsetHeight,
+      // offsetHeight 会向下取整，差零点几像素就会出现多余的滚动条
+      const height = Math.ceil(el.getBoundingClientRect().height),
         below = innerHeight - r.bottom - gap - margin,
         above = r.top - gap - margin,
         up = height > below && above > below
@@ -195,22 +206,28 @@ export function Select<T extends string>({
             className={[styles.list, styles['list-' + variant]].join(' ')}
           >
             {options.map((option, i) => (
-              <div
-                key={option.value}
-                id={optionId(i)}
-                role="option"
-                data-index={i}
-                aria-selected={i === selectedIndex}
-                aria-disabled={option.disabled || undefined}
-                data-active={i === active}
-                className={styles.option}
-                onMouseDown={(e) => e.preventDefault()}
-                onMouseMove={() => enabled(i) && i !== active && setActive(i)}
-                onClick={() => commit(i)}
-              >
-                <span className={styles.label}>{option.label}</span>
-                {i === selectedIndex && <Icon name="check" size={15} />}
-              </div>
+              <Fragment key={option.value}>
+                {option.group && option.group !== options[i - 1]?.group && (
+                  <div className={styles.group} role="presentation">
+                    {option.group}
+                  </div>
+                )}
+                <div
+                  id={optionId(i)}
+                  role="option"
+                  data-index={i}
+                  aria-selected={i === selectedIndex}
+                  aria-disabled={option.disabled || undefined}
+                  data-active={i === active}
+                  className={styles.option}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseMove={() => enabled(i) && i !== active && setActive(i)}
+                  onClick={() => commit(i)}
+                >
+                  <span className={styles.label}>{option.label}</span>
+                  {i === selectedIndex && <Icon name="check" size={15} />}
+                </div>
+              </Fragment>
             ))}
           </div>,
           document.body

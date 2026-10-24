@@ -21,7 +21,7 @@ test.beforeEach(async ({}, info) => {
   delete env.ELECTRON_RUN_AS_NODE
   app = await electron.launch({ args: ['.', '--user-data-dir=' + data], env })
   page = await app.firstWindow()
-  await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
+  await expect(page.getByLabel('翻译引擎')).toHaveAttribute('data-value', 'mt:microsoft-free')
   await open(path)
   await page.locator('[data-page="1"][data-ready=true]').waitFor()
 })

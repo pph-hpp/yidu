@@ -134,6 +134,31 @@
   flex-direction: column;
   gap: var(--px-10);
 }
+.freeHint {
+  display: flex;
+  align-items: center;
+  gap: var(--px-6);
+  margin: 0;
+  font-size: var(--px-12);
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.freeHint span {
+  flex: 1;
+  min-width: 0;
+}
+.freeHint button {
+  flex: 0 0 auto;
+  font-size: var(--px-12);
+  color: var(--accent);
+  padding: 0 var(--px-4);
+}
+.freeHint .hintClose {
+  width: var(--px-20);
+  height: var(--px-20);
+  padding: 0;
+  color: var(--text-secondary);
+}
 .actions {
   display: flex;
   gap: var(--px-6);
@@ -205,9 +230,11 @@
   font-size: var(--px-12);
   margin-top: var(--px-6);
 }
-.error button {
+.error button,
+.error a {
   color: var(--accent);
   margin-left: var(--px-8);
+  font-size: var(--px-12);
 }
 .paragraph {
   padding: var(--px-12);

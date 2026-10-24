@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
-import { useSettingsStore } from '../../stores/settingsStore'
+import { useSettingsStore, type SettingsTab } from '../../stores/settingsStore'
+import { mtEngine } from '../../../../shared/mt'
+import { TranslatorTab } from './TranslatorTab'
 import { defaultConfig } from '../../../../shared/config'
 import type { ModelProfile, PromptPreset } from '../../../../shared/types'
 import { Modal } from './Modal'
 import { Select } from '../Select/Select'
 import styles from './SettingsDialog.module.css'
 export function SettingsDialog() {
-  const saved = useSettingsStore((s) => s.config)!
+  const saved = useSettingsStore((s) => s.config)!,
+    savedKeys = useSettingsStore((s) => s.keys)
   const [draft, setDraft] = useState(() => structuredClone(saved)),
-    [tab, setTab] = useState('model'),
+    [tab, setTab] = useState<SettingsTab>(() => useSettingsStore.getState().tab),
     [profileId, setProfileId] = useState(saved.settings.activeProfileId || saved.profiles[0].id),
     [presetId, setPresetId] = useState(saved.settings.activePresetId || saved.presets[0].id)
   const [keys, setKeys] = useState<Record<string, string>>({}),
@@ -121,17 +124,30 @@ export function SettingsDialog() {
         }
       >
         <nav className={styles.tabs} role="tablist" aria-label="设置分类">
-          {[
-            ['model', '模型 API'],
-            ['prompt', '系统提示词'],
-            ['preferences', '偏好设置']
-          ].map(([id, label]) => (
+          {(
+            [
+              ['translator', '翻译引擎'],
+              ['model', '模型 API'],
+              ['prompt', '系统提示词'],
+              ['preferences', '翻译偏好']
+            ] as const
+          ).map(([id, label]) => (
             <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
               {label}
             </button>
           ))}
         </nav>
         <div className={styles.content}>
+          {tab === 'translator' && (
+            <TranslatorTab
+              draft={draft}
+              setDraft={setDraft}
+              keys={keys}
+              setKeys={setKeys}
+              savedKeys={savedKeys}
+              goTo={setTab}
+            />
+          )}
           {tab === 'model' && (
             <>
               <div className={styles.row}>
@@ -249,6 +265,15 @@ export function SettingsDialog() {
                   </button>
                 </div>
                 <small>密钥加密保存在本机系统钥匙串中，不会写入配置文件。</small>
+                {draft.settings.translator.kind === 'mt' && (
+                  <small>
+                    当前翻译使用{mtEngine(draft.settings.translator.engineId).name}，可在
+                    <button className={styles.link} onClick={() => setTab('translator')}>
+                      「翻译引擎」
+                    </button>
+                    中切换为大模型。
+                  </small>
+                )}
               </label>
               <div className={styles.row}>
                 <label>
@@ -452,7 +477,7 @@ export function SettingsDialog() {
                 <Select
                   value={draft.settings.summaryProfileId || ''}
                   options={[
-                    { value: '', label: '使用当前翻译模型' },
+                    { value: '', label: '使用当前大模型' },
                     ...draft.profiles.map((p) => ({ value: p.id, label: p.name }))
                   ]}
                   onChange={(value) =>
@@ -465,7 +490,7 @@ export function SettingsDialog() {
               </label>
             </>
           )}
-          {tab !== 'model' && message && (
+          {tab !== 'model' && tab !== 'translator' && message && (
             <p className={styles.error} role="alert">
               {message}
             </p>

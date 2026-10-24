@@ -7,6 +7,7 @@ import { useAnnotStore } from './stores/annotStore'
 import { bindSummaryEvents } from './stores/summaryStore'
 import { SummaryProgressDialog } from './components/dialogs/SummaryProgressDialog'
 import { AddToPromptDialog } from './components/dialogs/AddToPromptDialog'
+import { MtPrivacyDialog } from './components/dialogs/MtPrivacyDialog'
 import { useCallback, useEffect, useState } from 'react'
 import { useDocStore } from './stores/docStore'
 import { useSettingsStore } from './stores/settingsStore'
@@ -113,6 +114,7 @@ export function App() {
       <UnsavedChangesDialog />
       <SummaryProgressDialog />
       <AddToPromptDialog />
+      <MtPrivacyDialog />
       {settings.opened && settings.config && <SettingsDialog />}
       {toast && (
         <div className={styles.toast} role="status">

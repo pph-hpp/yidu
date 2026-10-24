@@ -80,7 +80,7 @@ test.beforeEach(async ({}, info) => {
     await window.api.setSecret({ profileId: 'default', apiKey: 'test-only-key' })
   }, config)
   await page.reload()
-  await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
+  await expect(page.getByLabel('翻译引擎')).toHaveAttribute('data-value', 'llm:default')
 })
 test.afterEach(async () => {
   await app?.close()
@@ -149,6 +149,7 @@ test('设置保存、密钥隔离、接口兼容与未保存确认', async ({}, 
   const stored = await readFile(resolve(info.outputPath('profile'), 'secrets.json'), 'utf8')
   expect(stored).not.toContain('test-only-key')
   await page.getByLabel('设置', { exact: true }).click()
+  await page.getByRole('tab', { name: '模型 API', exact: true }).click()
   const keyInput = page.getByRole('dialog', { name: '设置' }).getByLabel('API Key')
   await expect(keyInput).toHaveAttribute('type', 'password')
   await expect(keyInput).toHaveValue('')

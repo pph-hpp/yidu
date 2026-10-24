@@ -1,5 +1,5 @@
-import { useSettingsStore } from '../stores/settingsStore'
-import { useSummaryStore } from '../stores/summaryStore'
+import { requireLlm, useSettingsStore } from '../stores/settingsStore'
+import { useSummaryStore, summaryKey } from '../stores/summaryStore'
 import { useTranslateStore } from '../stores/translateStore'
 import { useUIStore } from '../stores/uiStore'
 import { selectionParts, partsText } from './selectionText'
@@ -30,7 +30,8 @@ export function registerShortcuts(openFile: () => void): () => void {
       if (key === 'm' && event.shiftKey) {
         event.preventDefault()
         const file = state.docs.find((d) => d.fileId === id)
-        if (file) void useSummaryStore.getState().start(file)
+        if (file && (useSummaryStore.getState().jobs[summaryKey(file)] || requireLlm()))
+          void useSummaryStore.getState().start(file)
         return
       }
       if (key === 'enter' && !typing && target.closest('[data-document-pane]')) {

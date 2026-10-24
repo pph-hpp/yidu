@@ -105,3 +105,128 @@
 .warning {
   color: var(--warn) !important;
 }
+/* 「翻译引擎」标签页（设计文档 8.10） */
+.engines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--px-8);
+}
+.engines > strong {
+  font-size: var(--px-13);
+  margin-bottom: var(--px-4);
+}
+.engine {
+  display: flex;
+  flex-direction: column;
+  gap: var(--px-6);
+  padding: var(--px-14) var(--px-16);
+  border: var(--px-1) solid var(--border-input);
+  border-radius: var(--radius-card);
+  transition:
+    border-color var(--transition),
+    background var(--transition);
+}
+.engine[data-selected='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.engineHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--px-12);
+}
+.content .engineName {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--px-8);
+  font-weight: 600;
+  cursor: pointer;
+}
+.content .engineName input {
+  width: var(--px-16);
+  height: var(--px-16);
+  padding: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: var(--px-20);
+  padding: 0 var(--px-6);
+  border-radius: var(--px-6);
+  font-size: var(--px-11);
+  font-weight: 400;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+}
+.tag[data-tone='proxy'] {
+  color: var(--warn-ink);
+  background: var(--warn-soft);
+}
+.tag[data-tone='ok'] {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+.engine[data-selected='true'] .tag[data-tone='ok'] {
+  background: var(--bg-panel);
+}
+.small {
+  flex: 0 0 auto;
+  height: var(--px-30);
+  padding: 0 var(--px-12);
+  font-size: var(--px-12);
+  background: var(--bg-panel);
+  border: var(--px-1) solid var(--border-input);
+}
+.content .engineDesc {
+  padding-left: var(--px-24);
+}
+.engine > [role='status'] {
+  padding-left: var(--px-24);
+}
+.youdao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--px-12);
+  margin-top: var(--px-6);
+  padding-left: var(--px-24);
+}
+.youdaoActions {
+  display: flex;
+  align-items: center;
+  gap: var(--px-12);
+  font-size: var(--px-13);
+}
+.steps {
+  margin: 0;
+  padding: var(--px-12) var(--px-14) var(--px-12) var(--px-32);
+  background: var(--bg-muted);
+  border-radius: var(--radius-card);
+  font-size: var(--px-12);
+  line-height: 1.7;
+  color: var(--text-body);
+}
+.engine[data-selected='true'] .steps {
+  background: var(--bg-panel);
+}
+.link {
+  display: inline;
+  height: auto;
+  padding: 0 var(--px-2);
+  font-size: inherit;
+  color: var(--accent);
+  vertical-align: baseline;
+}
+.link:hover:enabled {
+  background: transparent;
+  text-decoration: underline;
+}
+.youdaoActions a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.youdaoActions a:hover {
+  text-decoration: underline;
+}

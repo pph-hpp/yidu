@@ -20,7 +20,13 @@ test.beforeEach(async ({}, info) => {
   await mkdir(profile, { recursive: true })
   app = await electron.launch({ args: ['.', '--user-data-dir=' + profile], env })
   page = await app.firstWindow()
-  await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
+  // 首次使用免费引擎的隐私确认另有专门测试，这里预先确认，避免弹窗打断选字流程
+  await page.evaluate(async () => {
+    const c = await window.api.getConfig()
+    await window.api.setConfig({ ...c, mt: { ...c.mt, privacyAcked: ['microsoft-free'] } })
+  })
+  await page.reload()
+  await expect(page.getByLabel('翻译引擎')).toHaveAttribute('data-value', 'mt:microsoft-free')
 })
 test.afterEach(async () => {
   if (app) await app.evaluate(({ app }) => app.exit(0)).catch(() => {})
@@ -139,7 +145,7 @@ test('A13/A14 两种尺寸、双主题、token 尺寸/对比度和对话框键�
       env
     })
     page = await app.firstWindow()
-    await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
+    await expect(page.getByLabel('翻译引擎')).toHaveAttribute('data-value', 'mt:microsoft-free')
     await open('reader.md')
     cdp = await page.context().newCDPSession(page)
     await app.evaluate(

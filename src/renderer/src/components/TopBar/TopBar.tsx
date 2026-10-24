@@ -1,7 +1,7 @@
 import { useTheme } from '../../lib/theme'
 import { useDocStore } from '../../stores/docStore'
 import { useSummaryStore, summaryKey } from '../../stores/summaryStore'
-import { useSettingsStore } from '../../stores/settingsStore'
+import { llmReady, requireLlm, useSettingsStore } from '../../stores/settingsStore'
 import { Icon } from '../Icon'
 import { FileTabs } from '../FileTabs/FileTabs'
 import { Select } from '../Select/Select'
@@ -10,6 +10,7 @@ export function TopBar({ openFile }: { openFile(): void }) {
   const theme = useTheme()
   const file = useDocStore((s) => s.docs.find((d) => d.fileId === s.activeId))
   const summary = useSummaryStore((s) => (file ? s.jobs[summaryKey(file)] : undefined))
+  const canSummarize = useSettingsStore(llmReady)
   const summaryLabel = !summary
     ? '全文总结'
     : ['unsaved', 'saving', 'saved'].includes(summary.status)
@@ -41,11 +42,19 @@ export function TopBar({ openFile }: { openFile(): void }) {
       <button
         className={styles.summary}
         disabled={!file}
+        data-unavailable={!!file && !summary && !canSummarize}
         onClick={() => {
-          if (file) void useSummaryStore.getState().start(file)
+          // 已有总结任务时仍可查看；新任务需要可用的大模型（设计文档 8.9）
+          if (file && (summary || requireLlm())) void useSummaryStore.getState().start(file)
         }}
         aria-label="全文总结"
-        title={summary ? summaryLabel + '，点击查看' : '总结当前文档全文'}
+        title={
+          summary
+            ? summaryLabel + '，点击查看'
+            : canSummarize
+              ? '总结当前文档全文'
+              : '全文总结需要配置大模型 API'
+        }
       >
         <Icon name="summary" size={15} />
         {summaryLabel}

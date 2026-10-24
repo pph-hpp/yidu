@@ -4,25 +4,52 @@ import type { Sentence } from '../../../../shared/types'
 import { useTranslateStore } from '../../stores/translateStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useUIStore } from '../../stores/uiStore'
+import { alternativeEngine, openTranslatorSettings, switchAndRetry } from '../../lib/translator'
+import { mtEngine } from '../../../../shared/mt'
 import styles from './TranslatePane.module.css'
 export function SentenceError({ sentence }: { sentence: Sentence }) {
-  const state = useTranslateStore()
-  return sentence.status === 'error' ? (
+  const state = useTranslateStore(),
+    config = useSettingsStore((s) => s.config)
+  if (sentence.status !== 'error' || !config) return null
+  const code = sentence.error?.split(':')[0] || '',
+    message = sentence.error?.split(':').slice(1).join(':'),
+    other = alternativeEngine(config),
+    retry = <button onClick={() => state.retry(sentence.id)}>重试</button>,
+    settings = <button onClick={openTranslatorSettings}>去设置</button>,
+    switchTo = (
+      <button onClick={() => void switchAndRetry(other)}>
+        {code === 'NO_PROFILE' ? '改用' + mtEngine(other).name : '切换到' + mtEngine(other).name}
+      </button>
+    )
+  return (
     <div className={styles.error}>
-      {sentence.error?.split(':').slice(1).join(':')}
-      {!sentence.error?.startsWith('CONTEXT_TOO_LONG') && (
-        <button
-          onClick={() =>
-            /NO_PROFILE|AUTH|MODEL_NOT_FOUND/.test(sentence.error || '')
-              ? useSettingsStore.getState().open()
-              : state.retry(sentence.id)
-          }
-        >
-          {/NO_PROFILE|AUTH|MODEL_NOT_FOUND/.test(sentence.error || '') ? '去设置' : '重试'}
-        </button>
+      {message}
+      {code === 'ENGINE_UNAVAILABLE' ? (
+        <>
+          {switchTo}
+          {retry}
+        </>
+      ) : code === 'NO_PROFILE' ? (
+        <>
+          {settings}
+          {switchTo}
+        </>
+      ) : code === 'AUTH' || code === 'MODEL_NOT_FOUND' ? (
+        settings
+      ) : code === 'QUOTA' ? (
+        <a href={mtEngine('youdao').signupUrl} target="_blank" rel="noreferrer">
+          打开有道控制台
+        </a>
+      ) : code === 'CANCELED' ? (
+        <>
+          {retry}
+          {settings}
+        </>
+      ) : code === 'CONTEXT_TOO_LONG' ? null : (
+        retry
       )}
     </div>
-  ) : null
+  )
 }
 export function SentenceCard({
   sentence: s,

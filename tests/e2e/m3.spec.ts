@@ -102,7 +102,7 @@ test.beforeEach(async ({}, info) => {
   config.settings.translator = { kind: 'llm' }
   await page.evaluate((config) => window.api.setConfig(config), config)
   await page.reload()
-  await expect(page.getByLabel('当前模型')).toHaveAttribute('data-value', 'default')
+  await expect(page.getByLabel('翻译引擎')).toHaveAttribute('data-value', 'llm:default')
   await app.evaluate(({ dialog }, output) => {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: output })
   }, output)

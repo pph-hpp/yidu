@@ -27,6 +27,12 @@ test.beforeEach(async ({}, info) => {
   delete env.ELECTRON_RUN_AS_NODE
   app = await electron.launch({ args: ['.', '--user-data-dir=' + data], env })
   page = await app.firstWindow()
+  // 首次使用免费引擎的隐私确认另有专门测试，这里预先确认，避免弹窗打断选字流程
+  await page.evaluate(async () => {
+    const c = await window.api.getConfig()
+    await window.api.setConfig({ ...c, mt: { ...c.mt, privacyAcked: ['microsoft-free'] } })
+  })
+  await page.reload()
   await expect(page.getByText('打开 PDF 或 Markdown 文件', { exact: true })).toBeVisible()
 })
 test.afterEach(async () => {

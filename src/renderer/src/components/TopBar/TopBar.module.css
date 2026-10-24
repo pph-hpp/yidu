@@ -33,10 +33,14 @@
   font-weight: 500;
   white-space: nowrap;
 }
+.summary[data-unavailable='true'] {
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border-color: var(--border);
+}
 .settings {
   width: var(--px-34);
   height: var(--px-34);
   flex-shrink: 0;
   color: var(--text-secondary);
 }
-

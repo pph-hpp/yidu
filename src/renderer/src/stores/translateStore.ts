@@ -4,6 +4,8 @@ import { textClean } from '../lib/textClean'
 import { splitSentences } from '../lib/sentenceSplit'
 import { useSettingsStore } from './settingsStore'
 import { cacheGet, cacheKey, cachePut, engineTag } from '../lib/translateCache'
+import { useUIStore } from './uiStore'
+import { mtEngine } from '../../../shared/mt'
 interface TranslateState {
   requestId: string | null
   rawSelection: string
@@ -12,7 +14,9 @@ interface TranslateState {
   locked: boolean
   paragraphStarts: number[]
   translate(text: string, force?: boolean, waitMs?: number): void
-  retry(id?: string, edited?: string): void
+  retry(id?: string, edited?: string, match?: (s: Sentence) => boolean): void
+  /** 只重译出错的句子（切换引擎后使用） */
+  retryFailed(): void
   clear(): void
   setMode(mode: TranslateMode): void
   toggleLock(): void
@@ -51,18 +55,20 @@ export const useTranslateStore = create<TranslateState>((set, get) => ({
     if (typeof window !== 'undefined' && window.api)
       void send(sentences, requestId, force, 0, waitMs)
   },
-  retry(id, edited) {
+  retryFailed() {
+    if (get().sentences.some((s) => s.status === 'error'))
+      get().retry(undefined, undefined, (s) => s.status === 'error')
+  },
+  retry(id, edited, match = (s) => !id || s.id === id) {
     const state = get()
     if (!state.requestId) return
-    const selected = state.sentences
-      .filter((s) => !id || s.id === id)
-      .map((s) => ({
-        ...s,
-        source: edited ?? s.source,
-        target: '',
-        status: 'pending' as const,
-        error: undefined
-      }))
+    const selected = state.sentences.filter(match).map((s) => ({
+      ...s,
+      source: edited ?? s.source,
+      target: '',
+      status: 'pending' as const,
+      error: undefined
+    }))
     if (edited && (edited.length < 2 || edited.length > 6000)) return
     cancelBatches()
     const requestId = crypto.randomUUID()
@@ -115,7 +121,34 @@ async function send(
     else missing.push(sentence)
   }
   if (waitMs) await new Promise((resolve) => setTimeout(resolve, waitMs))
-  if (useTranslateStore.getState().requestId !== root) return
+  if (useTranslateStore.getState().requestId !== root || !missing.length) return
+  // 第一次使用免费引擎时，发送前先征得同意（设计文档 8.11）
+  const translator = config.settings.translator
+  if (
+    translator.kind === 'mt' &&
+    !mtEngine(translator.engineId).requiresKey &&
+    !config.mt.privacyAcked.includes(translator.engineId)
+  ) {
+    const ok = await useUIStore.getState().askPrivacy(translator.engineId)
+    if (useTranslateStore.getState().requestId !== root) return
+    if (!ok) {
+      const ids = new Set(missing.map((s) => s.id))
+      useTranslateStore.setState((s) => ({
+        sentences: s.sentences.map((v) =>
+          ids.has(v.id)
+            ? { ...v, status: 'error', error: 'CANCELED:已取消，可在设置中更换翻译引擎' }
+            : v
+        )
+      }))
+      return
+    }
+    const latest = useSettingsStore.getState().config
+    if (latest && !latest.mt.privacyAcked.includes(translator.engineId))
+      await useSettingsStore.getState().save({
+        ...latest,
+        mt: { ...latest.mt, privacyAcked: [...latest.mt.privacyAcked, translator.engineId] }
+      })
+  }
   for (let i = 0; i < missing.length; i += 60) {
     const part = missing.slice(i, i + 60),
       requestId = crypto.randomUUID()

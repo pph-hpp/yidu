@@ -93,6 +93,15 @@
   color: var(--accent-ink);
   background: var(--accent-soft);
 }
+.chip:disabled {
+  opacity: 1;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+}
+.chip:disabled .chevron {
+  opacity: 0.5;
+  color: var(--text-secondary);
+}
 .chip[data-tone='accent'] .chevron {
   color: var(--accent-ink);
 }
@@ -144,6 +153,17 @@
   height: var(--px-32);
   padding: 0 var(--px-10);
   font-size: var(--px-13);
+}
+.group {
+  flex: 0 0 auto;
+  padding: var(--px-8) var(--px-10) var(--px-4);
+  font-size: var(--px-11);
+  color: var(--text-secondary);
+  user-select: none;
+}
+.group:not(:first-child) {
+  margin-top: var(--px-4);
+  border-top: var(--px-1) solid var(--border-soft);
 }
 .label {
   flex: 1 1 auto;
