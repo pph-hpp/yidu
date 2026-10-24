@@ -1,6 +1,6 @@
 # 译读
 
-Electron + React + TypeScript 桌面文献翻译阅读器。按 `docs/译读-开发设计文档.md` 实现 M1～M5；PDF / Markdown 阅读、流式翻译、全文总结、标准 PDF 标注、深色模式和 Windows 安装包已完成。完整验收结果与未验证项目见 [M5-验收报告.md](M5-验收报告.md)。`docs/` 保持原样。
+Electron + React + TypeScript 桌面文献翻译阅读器。按 `docs/译读-开发设计文档.md` 实现 M1～M5；PDF / Markdown 阅读、流式翻译、全文总结、标准 PDF 标注、深色模式和 Windows 安装包已完成。`docs/` 保持原样。
 
 ## 启动
 
@@ -62,7 +62,7 @@ npm run dist
 node scripts/verify-package.cjs
 ```
 
-E2E 使用真实 Electron 和本地模拟模型，不需要下载 Playwright 浏览器。运行时请避免同时启动其他自动化窗口抢夺焦点。临时替换原生文件选择对话框仅发生在测试进程，应用没有测试专用 IPC。失败输出在 `test-results/`；验收截图和脱敏记录在 `tests/evidence/`。
+E2E 使用真实 Electron 和本地模拟模型，不需要下载 Playwright 浏览器。运行时请避免同时启动其他自动化窗口抢夺焦点。临时替换原生文件选择对话框仅发生在测试进程，应用没有测试专用 IPC。检查时会重新生成 `test-results/`、`tests/evidence/` 和 `.local/` 等临时产物；这些目录不纳入版本控制，可在检查结束后删除。
 
 真实 API 检查脚本会调用用户配置的服务并产生模型用量，只在需要时手动执行：
 
@@ -72,14 +72,14 @@ node scripts/verify-live-summary.cjs
 node scripts/verify-live-summary.cjs --paper
 ```
 
-最后一条使用有公开许可的论文前 12 页节选，许可证见 `tests/fixtures/LICENSE.txt`。真实验证使用 `.local/` 下独立配置，不把测试术语和背景写进正常用户设置。
+最后一条使用有公开许可的论文前 12 页节选，许可证见 `tests/fixtures/LICENSE.txt`。真实验证使用 `.local/` 下独立配置，不把测试术语和背景写进正常用户设置。清理临时目录后，需先执行 `verify-api.cjs` 初始化测试配置，再执行 `verify-live-summary.cjs`。
 
 `npm run fixtures` 生成原创 CC0 测试素材；第三方真实论文及节选保留来源与 CC BY 4.0 说明。第 15.1 节列举的清洗、分句、流解析、坐标和四类 PDF 注释测试均已实现。
 
 ## 当前交付限制
 
 - Acrobat 互操作、实际安装后的资源管理器文件关联、在线设计画布逐像素比较尚未验证；OpenAI 官方和 Ollama 的真实端点未提供。
-- 文档指定的 Electron 33 和构建/测试工具存在依赖审计告警；生产依赖筛选仅余 2 个 low，但 Electron 虽列在 devDependencies 中仍会随应用发布。详细审计见验收报告，不能把生产筛选结果解释为整个安装包没有漏洞。
+- 文档指定的 Electron 33 和构建/测试工具存在依赖审计告警；生产依赖筛选仅余 2 个 low，但 Electron 虽列在 devDependencies 中仍会随应用发布。不能把生产筛选结果解释为整个安装包没有漏洞。
 - Windows 构建缓存首次解压 winCodeSign 时可能需要符号链接权限。本机已保留官方归档中的 Windows 工具并排除不使用的 Darwin 条目后成功构建，没有修改应用安全配置。
 
 单个 PDF 总结流程的本地诊断（仅使用本机模拟模型，不调用配置中的真实 API，不生成真实论文总结）：

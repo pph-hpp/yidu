@@ -14,7 +14,7 @@ async function main() {
   fs.mkdirSync(data, { recursive: true })
   fs.mkdirSync(evidence, { recursive: true })
   const fixture = path.join(data, 'packaged-smoke.pdf')
-  fs.copyFileSync('tests/evidence/m4/standard-annotations.pdf', fixture)
+  fs.copyFileSync('tests/fixtures/standard-annotations.pdf', fixture)
   const fuses = await getCurrentFuseWire(exe)
   const expected = {
     RunAsNode: 48,
