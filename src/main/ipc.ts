@@ -1,9 +1,23 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { IPC } from '../shared/ipc'
+import { ConfigService } from './services/config.service'
+import { SecretService } from './services/secret.service'
+import { LLMService, validateTranslate } from './services/llm/llm.service'
 import { FileService } from './services/file.service'
 import { isAppPage } from './security'
 export function registerIPC(win: BrowserWindow, appUrl: string): void {
   const files = new FileService()
+  const config = new ConfigService(),
+    secrets = new SecretService(),
+    llm = new LLMService(config, secrets)
+  const payload = (arg: unknown): Record<string, unknown> => {
+    if (!arg || typeof arg !== 'object' || Array.isArray(arg)) throw new Error('参数格式错误')
+    return arg as Record<string, unknown>
+  }
+  const send = (channel: string, arg: unknown) => {
+    if (!win.isDestroyed()) win.webContents.send(channel, arg)
+  }
+  win.on('closed', () => llm.cancelAll())
   const handle = (channel: string, run: (arg: unknown) => Promise<unknown>) => {
     ipcMain.removeHandler(channel)
     ipcMain.handle(channel, (event, arg: unknown) => {
@@ -27,4 +41,22 @@ export function registerIPC(win: BrowserWindow, appUrl: string): void {
     return result.canceled ? null : files.openPath({ path: result.filePaths[0] })
   })
   handle(IPC.FILE_OPEN_PATH, (arg) => files.openPath(arg))
+  handle(IPC.CONFIG_GET, async () => config.get())
+  handle(IPC.CONFIG_SET, async (arg) => config.set(arg))
+  handle(IPC.SECRET_SET, async (arg) => {
+    const p = payload(arg)
+    secrets.set(p.profileId, p.apiKey)
+  })
+  handle(IPC.SECRET_HAS, async (arg) => secrets.has(payload(arg).profileId))
+  handle(IPC.LLM_TEST, async (arg) => llm.test(payload(arg).profile))
+  handle(IPC.LLM_CANCEL, async (arg) => llm.cancel(payload(arg).requestId))
+  handle(IPC.LLM_TRANSLATE, async (arg) => {
+    validateTranslate(arg)
+    void llm.translate(
+      arg,
+      (e) => send(IPC.LLM_DELTA, e),
+      (requestId) => send(IPC.LLM_DONE, { requestId }),
+      (e) => send(IPC.LLM_ERROR, e)
+    )
+  })
 }

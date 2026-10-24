@@ -164,7 +164,7 @@
   padding: var(--px-4) var(--px-4) var(--px-4) var(--px-12);
   gap: var(--px-4);
 }
-.input input {
+.input textarea {
   width: 0;
   flex: 1;
   height: var(--px-32);
@@ -183,4 +183,74 @@
   50% {
     opacity: 0.5;
   }
+}
+
+.tags select {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  max-width: var(--px-200);
+}
+.model i[data-active='true'] {
+  background: var(--accent);
+}
+.model i[data-error='true'] {
+  background: var(--danger);
+}
+.card {
+  position: relative;
+}
+.card[data-paragraph='true'] {
+  margin-top: var(--px-16);
+  border-top: var(--px-1) solid var(--border-soft);
+}
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  opacity: 0;
+  gap: var(--px-4);
+}
+.card:hover .cardActions,
+.card:focus-within .cardActions {
+  opacity: 1;
+}
+.cardActions button {
+  font-size: var(--px-11);
+}
+.error {
+  color: var(--danger);
+  font-size: var(--px-12);
+  margin-top: var(--px-6);
+}
+.error button {
+  color: var(--accent);
+  margin-left: var(--px-8);
+}
+.paragraph {
+  padding: var(--px-12);
+}
+.paragraph hr {
+  border: 0;
+  border-top: var(--px-1) solid var(--border);
+  margin: var(--px-16) 0;
+}
+.actions .locked {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.input textarea {
+  resize: vertical;
+  max-height: var(--px-200);
+  color: var(--text-body);
+  font: inherit;
+  padding-top: var(--px-6);
+}
+.content textarea {
+  width: 100%;
+  font: inherit;
+  color: var(--text-body);
+  background: var(--bg-panel);
+  border: var(--px-1) solid var(--border-input);
+  border-radius: var(--radius);
 }

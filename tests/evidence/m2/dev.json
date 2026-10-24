@@ -1,0 +1,9 @@
+{
+  "url": "http://localhost:5174/",
+  "title": "译读",
+  "node": {
+    "require": false,
+    "process": false
+  },
+  "settingsVisible": true
+}

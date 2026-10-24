@@ -1,3 +1,11 @@
+import type { AppConfig } from './config'
+import type {
+  TranslateRequest,
+  TranslationDelta,
+  TranslationError,
+  ConnectionResult
+} from './translation'
+import type { ModelProfile } from './types'
 import type { OpenedFile } from './types'
 export const IPC = {
   FILE_OPEN: 'file:open',
@@ -26,8 +34,18 @@ export const IPC = {
 export interface OpenPathRequest {
   path: string
 }
-// Only implemented M1 methods are exposed. Future channels are not callable yet.
+// Expose individual validated operations, never generic IPC.
 export interface YiduAPI {
+  getConfig(): Promise<AppConfig>
+  setConfig(patch: Partial<AppConfig>): Promise<AppConfig>
+  setSecret(req: { profileId: string; apiKey: string }): Promise<void>
+  hasSecret(req: { profileId: string }): Promise<boolean>
+  testConnection(req: { profile: ModelProfile }): Promise<ConnectionResult>
+  translate(req: TranslateRequest): Promise<void>
+  cancelTranslation(req: { requestId: string }): Promise<void>
+  onTranslationDelta(callback: (event: TranslationDelta) => void): () => void
+  onTranslationDone(callback: (event: { requestId: string }) => void): () => void
+  onTranslationError(callback: (event: TranslationError) => void): () => void
   openFile(): Promise<OpenedFile | null>
   openPath(req: OpenPathRequest): Promise<OpenedFile>
 }

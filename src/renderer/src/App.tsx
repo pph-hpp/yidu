@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useDocStore } from './stores/docStore'
-import { useTranslateStore } from './stores/translateStore'
+import { useSettingsStore } from './stores/settingsStore'
+import { SettingsDialog } from './components/dialogs/SettingsDialog'
+import { bindTranslationEvents, useTranslateStore } from './stores/translateStore'
 import { useUIStore } from './stores/uiStore'
 import { TopBar } from './components/TopBar/TopBar'
 import { EditToolbar } from './components/EditToolbar/EditToolbar'
@@ -13,6 +15,18 @@ import styles from './App.module.css'
 export function App() {
   const docs = useDocStore((s) => s.docs),
     activeId = useDocStore((s) => s.activeId)
+  const settings = useSettingsStore()
+  useEffect(() => {
+    void useSettingsStore
+      .getState()
+      .load()
+      .then(() =>
+        useTranslateStore
+          .getState()
+          .setMode(useSettingsStore.getState().config!.settings.defaultMode)
+      )
+    return bindTranslationEvents()
+  }, [])
   const toast = useUIStore((s) => s.toast)
   const [opening, setOpening] = useState(false),
     [error, setError] = useState('')
@@ -60,6 +74,7 @@ export function App() {
         <TranslatePane />
       </div>
       <StatusBar />
+      {settings.opened && settings.config && <SettingsDialog />}
       {toast && (
         <div className={styles.toast} role="status">
           {toast}

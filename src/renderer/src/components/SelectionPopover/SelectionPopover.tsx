@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import { useSettingsStore } from '../../stores/settingsStore'
 import { useTranslateStore } from '../../stores/translateStore'
 import { useUIStore } from '../../stores/uiStore'
 import styles from './SelectionPopover.module.css'
@@ -11,9 +12,10 @@ export function SelectionPopover({ container }: { container: RefObject<HTMLDivEl
   const [position, setPosition] = useState({ left: 0, top: 0 })
   const popover = useRef<HTMLDivElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>()
-  const translate = (text: string) => {
+  const translate = (text: string, waitMs = 0) => {
     try {
-      useTranslateStore.getState().translate(text)
+      if (!useTranslateStore.getState().locked)
+        useTranslateStore.getState().translate(text, false, waitMs)
     } catch (err) {
       useUIStore.getState().showToast((err as Error).message)
     }
@@ -49,7 +51,8 @@ export function SelectionPopover({ container }: { container: RefObject<HTMLDivEl
         useUIStore.getState().showToast('选区过长，请分段选择或使用全文总结')
         return
       }
-      timer.current = setTimeout(() => translate(text), 300)
+      if (useSettingsStore.getState().config?.settings.autoTranslateOnSelect !== false)
+        translate(text, 300)
     }
     const clickOutside = (event: MouseEvent) => {
       if (!(event.target as HTMLElement).closest('[data-selection-popover]')) hide()

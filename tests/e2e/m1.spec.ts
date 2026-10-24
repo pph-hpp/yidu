@@ -7,6 +7,7 @@ import {
   type Page
 } from '@playwright/test'
 import { resolve } from 'node:path'
+import { mkdir } from 'node:fs/promises'
 import type { YiduAPI } from '../../src/shared/ipc'
 declare global {
   interface Window {
@@ -15,14 +16,16 @@ declare global {
 }
 let app: ElectronApplication
 let page: Page
-test.beforeEach(async () => {
+test.beforeEach(async ({}, info) => {
+  const data = info.outputPath('profile')
+  await mkdir(data, { recursive: true })
   const env = Object.fromEntries(
     Object.entries(process.env).filter(
       (entry): entry is [string, string] => typeof entry[1] === 'string'
     )
   )
   delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({ args: ['.'], env })
+  app = await electron.launch({ args: ['.', '--user-data-dir=' + data], env })
   page = await app.firstWindow()
   await expect(page.getByText('打开 PDF 或 Markdown 文件', { exact: true })).toBeVisible()
 })
@@ -63,7 +66,24 @@ test('安全边界、标签与打开失败', async () => {
       process: 'process' in window,
       keys: Object.keys(window.api).sort()
     }))
-  ).toEqual({ node: false, process: false, keys: ['openFile', 'openPath'] })
+  ).toEqual({
+    node: false,
+    process: false,
+    keys: [
+      'cancelTranslation',
+      'getConfig',
+      'hasSecret',
+      'onTranslationDelta',
+      'onTranslationDone',
+      'onTranslationError',
+      'openFile',
+      'openPath',
+      'setConfig',
+      'setSecret',
+      'testConnection',
+      'translate'
+    ]
+  })
   await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveAttribute(
     'content',
     /connect-src 'self'/

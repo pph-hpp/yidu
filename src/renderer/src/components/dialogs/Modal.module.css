@@ -1,0 +1,51 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+}
+.dialog,
+.wide {
+  background: var(--bg-panel);
+  border-radius: var(--radius-dialog);
+  box-shadow: var(--shadow-dialog);
+  width: var(--px-420);
+  max-width: calc(100vw - var(--px-40));
+  max-height: calc(100vh - var(--px-80));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.wide {
+  width: var(--px-680);
+  height: var(--px-820);
+}
+.header {
+  padding: var(--px-18) var(--px-24);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: var(--px-1) solid var(--border);
+}
+.header h2 {
+  font-size: var(--px-17);
+  margin: 0;
+  font-weight: 600;
+}
+.header button {
+  width: var(--px-32);
+  height: var(--px-32);
+}
+.footer {
+  padding: var(--px-16) var(--px-24);
+  border-top: var(--px-1) solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--px-8);
+}
+.footer button {
+  height: var(--px-38);
+  padding: 0 var(--px-16);
+}

@@ -80,3 +80,11 @@
 :root {
   --font-reading: 'Source Serif 4', var(--font-ui);
 }
+
+:root {
+  --px-17: 17px;
+  --px-38: 38px;
+  --px-80: 80px;
+  --px-680: 680px;
+  --px-820: 820px;
+}

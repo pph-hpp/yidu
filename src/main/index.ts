@@ -4,6 +4,8 @@ import { pathToFileURL } from 'node:url'
 import { registerIPC } from './ipc'
 import { isAppPage, isExternalLink } from './security'
 app.setName('yidu')
+if (app.commandLine.hasSwitch('user-data-dir'))
+  app.setPath('userData', app.commandLine.getSwitchValue('user-data-dir'))
 function createWindow(): void {
   const appUrl = process.env.ELECTRON_RENDERER_URL
     ? new URL(process.env.ELECTRON_RENDERER_URL).href

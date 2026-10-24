@@ -1,3 +1,4 @@
+import { useSettingsStore } from '../../stores/settingsStore'
 import { Icon } from '../Icon'
 import { FileTabs } from '../FileTabs/FileTabs'
 import styles from './TopBar.module.css'
@@ -13,7 +14,12 @@ export function TopBar({ openFile }: { openFile(): void }) {
         <Icon name="summary" size={15} />
         全文总结
       </button>
-      <button className={styles.settings} disabled aria-label="设置" title="模型设置将在 M2 实现">
+      <button
+        className={styles.settings}
+        onClick={() => useSettingsStore.getState().open()}
+        aria-label="设置"
+        title="设置"
+      >
         <Icon name="settings" size={18} />
       </button>
     </header>

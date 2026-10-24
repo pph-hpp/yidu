@@ -6,3 +6,8 @@ test-results/
 playwright-report/
 *.log
 
+
+/api.txt
+/.local/
+/secrets.json
+
