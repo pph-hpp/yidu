@@ -1,5 +1,10 @@
-import { approvedHttpUrls } from '../http-exceptions'
-import { buildPrompt, validId, stringField, validateProfile } from '../../../shared/config'
+import {
+  buildPrompt,
+  normalizeProfile,
+  validId,
+  stringField,
+  validateProfile
+} from '../../../shared/config'
 import type { ModelProfile } from '../../../shared/types'
 import type {
   TranslateRequest,
@@ -44,9 +49,8 @@ export class LLMService {
   profile(id?: string | null): ModelProfile {
     const cfg = this.config.get(),
       profile = cfg.profiles.find((p) => p.id === (id || cfg.settings.activeProfileId))
+    // 密钥可选：没有密钥时不带 Authorization，由服务端决定是否需要
     if (!profile?.model) throw new LLMError('NO_PROFILE')
-    const local = ['localhost', '127.0.0.1', '[::1]'].includes(new URL(profile.baseUrl).hostname)
-    if (!local && !this.secrets.has(profile.id)) throw new LLMError('NO_PROFILE')
     return profile
   }
   cancel(id: unknown): void {
@@ -61,20 +65,24 @@ export class LLMService {
     messages: ChatMessage[],
     signal: AbortSignal,
     onText: (text: string) => void,
-    maxTokens?: number
+    maxTokens?: number,
+    onThinking?: () => void
   ): Promise<void> {
     await this.queue.run(profile.id, signal, async () => {
       const adapter = new FetchAdapter(profile, this.secrets.get(profile.id))
       for await (const text of adapter.chatStream(messages, {
         temperature: profile.temperature,
         maxTokens,
-        signal
+        signal,
+        onThinking
       }))
         onText(text)
     })
   }
-  async test(value: unknown): Promise<ConnectionResult> {
-    validateProfile(value, approvedHttpUrls())
+  async test(input: unknown): Promise<ConnectionResult> {
+    // 测试的是设置页里尚未保存的配置，与保存时一样先去掉首尾空白
+    const value = normalizeProfile(input)
+    validateProfile(value)
     const start = Date.now(),
       controller = new AbortController()
     try {
@@ -119,6 +127,15 @@ export class LLMService {
     const replace = (sentenceId: string, text: string) =>
       pending.set(sentenceId, { text, replace: true })
     const completed = new Set<string>()
+    // 推理模型输出思考过程时，通知界面这些句子「模型思考中」（每个请求只发一次）
+    let thinkingSent = false
+    const thinking = () => {
+      if (thinkingSent || signal.aborted) return
+      thinkingSent = true
+      for (const s of req.sentences)
+        if (!completed.has(s.id))
+          delta({ requestId: req.requestId, sentenceId: s.id, text: '', thinking: true })
+    }
     try {
       const { translator, llmFallbackToMt } = this.config.get().settings
       let fallback: MtEngineId | undefined
@@ -126,7 +143,7 @@ export class LLMService {
         await this.translateMt(translator.engineId, req.sentences, signal, replace, completed)
       else
         try {
-          await this.translateLlm(req, signal, emit, completed, flush)
+          await this.translateLlm(req, signal, emit, completed, flush, thinking)
         } catch (e) {
           // 网络、超时、服务异常或重试后仍限流时，未完成的句子改用微软免费引擎（设计文档 8.8）
           if (
@@ -187,7 +204,8 @@ export class LLMService {
     signal: AbortSignal,
     emit: (sentenceId: string, text: string) => void,
     completed: Set<string>,
-    flush: () => void
+    flush: () => void,
+    thinking?: () => void
   ): Promise<void> {
     const profile = this.profile(req.profileId),
       cfg = this.config.get(),
@@ -216,7 +234,9 @@ export class LLMService {
           (text) => {
             emitted = true
             parser.push(text)
-          }
+          },
+          undefined,
+          thinking
         )
         break
       } catch (e) {

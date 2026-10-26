@@ -16,7 +16,7 @@ let requests: Array<{
   body: Record<string, unknown>
   headers: Record<string, unknown>
 }>
-let mode: 'normal' | 'missing' | 'retry' | 'auth' = 'normal'
+let mode: 'normal' | 'missing' | 'retry' | 'auth' | 'think' = 'normal'
 test.beforeEach(async ({}, info) => {
   requests = []
   mode = 'normal'
@@ -49,6 +49,19 @@ test.beforeEach(async ({}, info) => {
           ) +
           '\n\n'
       )
+    if (mode === 'think') {
+      // 推理模型：先在 reasoning_content 里思考，再在正文里混一段复述原句的 <think>
+      for (let i = 0; i < 6; i++) {
+        res.write(
+          'data: ' +
+            JSON.stringify({ choices: [{ delta: { reasoning_content: '思考…' } }] }) +
+            '\n\n'
+        )
+        await new Promise((r) => setTimeout(r, 250))
+      }
+      emit('<think>\n[1] Static timing analysis')
+      emit(' verifies.\n</think>\n\n')
+    }
     for (let i = 1; i <= count; i++) {
       if (mode === 'missing' && count > 1 && i === 2) continue
       emit((i > 1 ? '\n' : '') + '[')
@@ -250,4 +263,31 @@ test('编辑后点击重译提交新原文并恢复浏览模式', async () => {
   await expect(card).toHaveAttribute('data-status', 'done')
   await expect(card).toContainText('Another revision of the source sentence.')
   await expect(editor).toHaveCount(0)
+})
+test('推理模型：思考时显示「模型思考中」，思考内容不进入译文', async () => {
+  mode = 'think'
+  await translate()
+  await expect(page.getByTestId('sentence-card').first()).toContainText('模型思考中…')
+  await expect(page.locator('[data-status=done]')).toHaveCount(3)
+  const cards = await page.getByTestId('sentence-card').allInnerTexts()
+  expect(cards[0]).toContain('时序裕量译文1')
+  expect(cards.join('')).not.toContain('模型思考中')
+  expect(cards.join('')).not.toContain('think')
+  expect(cards[0]).not.toContain('verifies.\n')
+})
+test('Base URL 不做拦截：非本机 HTTP 地址可保存，测试连接显示真实原因', async () => {
+  await page.getByLabel('设置', { exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '设置' })
+  await dialog.getByRole('tab', { name: '模型 API' }).click()
+  await dialog.getByLabel('Base URL').fill('  http://127.0.0.2:9/v1 ')
+  await dialog.getByLabel('模型名称').fill(' mock ')
+  await dialog.getByRole('button', { name: '测试连接' }).click()
+  const status = dialog.getByRole('status')
+  await expect(status).toContainText('网络连接失败')
+  await expect(status).not.toContainText('HTTPS')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  const saved = (await page.evaluate(() => window.api.getConfig())).profiles[0]
+  expect(saved.baseUrl).toBe('http://127.0.0.2:9/v1')
+  expect(saved.model).toBe('mock')
 })

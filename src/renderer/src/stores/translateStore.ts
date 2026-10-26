@@ -206,10 +206,23 @@ export function bindTranslationEvents(): () => void {
     window.api.onTranslationDelta((e) => {
       const batch = batches.get(e.requestId)
       if (!batch || useTranslateStore.getState().requestId !== batch.root) return
+      if (e.thinking) {
+        useTranslateStore.setState((s) => ({
+          sentences: s.sentences.map((v) =>
+            v.id === e.sentenceId && v.status === 'pending' ? { ...v, thinking: true } : v
+          )
+        }))
+        return
+      }
       useTranslateStore.setState((s) => ({
         sentences: s.sentences.map((v) =>
           v.id === e.sentenceId
-            ? { ...v, target: e.replace ? e.text : v.target + e.text, status: 'streaming' }
+            ? {
+                ...v,
+                target: e.replace ? e.text : v.target + e.text,
+                status: 'streaming',
+                thinking: false
+              }
             : v.status === 'streaming' && batch.ids.includes(v.id)
               ? { ...v, status: 'done' }
               : v

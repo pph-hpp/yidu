@@ -112,6 +112,7 @@ export function SentenceCard({
           {s.target || s.status === 'pending'
             ? s.target || (
                 <>
+                  {s.thinking && <div className={styles.thinking}>模型思考中…</div>}
                   <div className={styles.skeleton} />
                   <div className={styles.skeleton} />
                 </>

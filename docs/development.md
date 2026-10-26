@@ -31,7 +31,7 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
 & .\node_modules\electron\dist\electron.exe scripts/import-api.cjs api.txt
 ```
 
-之后也可以直接在设置中修改。生产环境默认拒绝远程 HTTP 地址，只允许 HTTPS 和本机地址。
+之后也可以直接在设置中修改。Base URL 不限制协议和主机，HTTP、局域网地址、自建网关都可以直接使用；API Key 可以不填。
 
 ## 检查与打包
 

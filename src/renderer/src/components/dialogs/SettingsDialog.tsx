@@ -97,9 +97,12 @@ export function SettingsDialog() {
       setMessage(
         result.ok ? '✓ 连接正常，响应 ' + result.latencyMs + ' ms' : result.message || '连接失败'
       )
-    } catch {
+    } catch (e) {
       setOk(false)
-      setMessage('连接失败，请检查模型配置')
+      setMessage(
+        (e as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '') ||
+          '连接失败，请检查模型配置'
+      )
     } finally {
       setBusy(false)
     }

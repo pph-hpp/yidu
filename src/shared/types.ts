@@ -24,6 +24,8 @@ export interface Sentence {
   target: string
   status: SentenceStatus
   error?: string
+  /** 推理模型正在思考，尚未输出译文 */
+  thinking?: boolean
 }
 export type TranslateMode = 'sentence' | 'paragraph'
 export type Provider = 'openai-compatible' | 'anthropic' | 'azure-openai'
