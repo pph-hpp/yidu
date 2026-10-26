@@ -11,6 +11,8 @@ export interface TranslationDelta {
   text: string
   /** 为 true 时用 text 覆盖该句已有内容，而不是追加 */
   replace?: true
+  /** 推理模型正在思考（text 为空），界面显示「模型思考中」 */
+  thinking?: true
 }
 export interface TranslationDone {
   requestId: string

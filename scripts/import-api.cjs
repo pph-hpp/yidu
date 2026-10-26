@@ -29,18 +29,6 @@ app.whenReady().then(() => {
     const parsed = new URL(url)
     if (parsed.username || parsed.password || parsed.hash) throw new Error('URL 无效')
     if (parsed.pathname === '/') url = parsed.origin + '/v1'
-    if (parsed.protocol === 'http:') {
-      if (!process.argv.includes('--allow-this-http')) throw new Error('未批准 HTTP')
-      fs.writeFileSync(
-        require('path').join(app.getPath('userData'), 'http-exceptions.json'),
-        JSON.stringify({ urls: [url] })
-      )
-    }
-    if (parsed.protocol === 'https:')
-      fs.writeFileSync(
-        require('path').join(app.getPath('userData'), 'http-exceptions.json'),
-        JSON.stringify({ urls: [] })
-      )
     const secrets = new Store({ name: 'secrets', defaults: { keys: {} } })
     const config = new Store({ name: 'config' })
     const data = config.store

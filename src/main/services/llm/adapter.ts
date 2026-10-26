@@ -1,10 +1,10 @@
-import { approvedHttpUrls } from '../http-exceptions'
 import { openAIRequest } from './openai'
 import { anthropicRequest } from './anthropic'
 import { net } from 'electron'
 import type { ModelProfile } from '../../../shared/types'
 import { validateProfile } from '../../../shared/config'
 import { readSSE } from './sse'
+import { ThinkFilter, stripThink } from './think'
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
@@ -13,6 +13,8 @@ export interface ChatOptions {
   temperature: number
   maxTokens?: number
   signal: AbortSignal
+  /** 推理模型正在输出思考过程（还没有正文） */
+  onThinking?: () => void
 }
 export interface LLMAdapter {
   chatStream(messages: ChatMessage[], opts: ChatOptions): AsyncIterable<string>
@@ -95,7 +97,7 @@ export function requestSpec(
   opts: ChatOptions,
   stream: boolean
 ) {
-  validateProfile(profile, approvedHttpUrls())
+  validateProfile(profile)
   return profile.provider === 'anthropic'
     ? anthropicRequest(profile, key, msgs, opts, stream)
     : openAIRequest(profile, key, msgs, opts, stream)
@@ -136,6 +138,7 @@ export class FetchAdapter implements LLMAdapter {
       if (!res.ok) throw await responseError(res)
       if (!res.body) throw new LLMError('SERVER')
       let completed = false
+      const filter = new ThinkFilter()
       for await (const data of readSSE(res.body)) {
         if (data === '[DONE]') {
           completed = true
@@ -144,16 +147,25 @@ export class FetchAdapter implements LLMAdapter {
         const parsed = JSON.parse(data)
         if (parsed.type === 'message_stop' || parsed.choices?.[0]?.finish_reason) completed = true
         if (parsed.error || parsed.type === 'error') throw new LLMError('SERVER')
-        const text =
-          this.profile.provider === 'anthropic'
-            ? parsed.delta?.text
-            : parsed.choices?.[0]?.delta?.content
+        const delta =
+          this.profile.provider === 'anthropic' ? parsed.delta : parsed.choices?.[0]?.delta
+        // 服务端推理解析器把思考过程放在单独字段：算作服务端仍在工作，不计入超时
+        const reasoning = delta?.reasoning_content ?? delta?.reasoning ?? delta?.thinking
+        if (typeof reasoning === 'string' && reasoning) {
+          reset()
+          opts.onThinking?.()
+        }
+        const text = this.profile.provider === 'anthropic' ? delta?.text : delta?.content
         if (typeof text === 'string' && text) {
           reset()
-          yield text
+          const visible = filter.push(text)
+          if (visible) yield visible
+          else if (filter.thinking) opts.onThinking?.()
         }
       }
       if (!completed) throw new LLMError('NETWORK')
+      const rest = filter.finish()
+      if (rest) yield rest
     } catch (error) {
       if (opts.signal.aborted) throw new DOMException('已取消', 'AbortError')
       if (error instanceof LLMError) throw error
@@ -191,8 +203,12 @@ export class FetchAdapter implements LLMAdapter {
               .map((v: { text: string }) => v.text)
               .join('')
           : body.choices?.[0]?.message?.content
+      const message = body.choices?.[0]?.message
+      const visible = typeof text === 'string' ? stripThink(text) : ''
+      if (!visible && (message?.reasoning_content || message?.reasoning || /<think>/.test(text)))
+        throw new LLMError('SERVER', '模型只返回了思考过程，没有给出回答（可能超出了最大输出长度）')
       if (typeof text !== 'string') throw new LLMError('SERVER')
-      return text
+      return visible
     } catch (error) {
       if (opts.signal.aborted) throw new DOMException('已取消', 'AbortError')
       if (error instanceof LLMError) throw error

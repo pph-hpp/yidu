@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { isLocalUrl, type AppConfig } from '../../../shared/config'
+import type { AppConfig } from '../../../shared/config'
 import { YOUDAO_SECRET_ID, mtEngine, type MtEngineId } from '../../../shared/mt'
 export type SettingsTab = 'translator' | 'model' | 'prompt' | 'preferences'
 interface State {
@@ -40,10 +40,10 @@ export const useSettingsStore = create<State>((set, get) => ({
   }
 }))
 type Snapshot = Pick<State, 'config' | 'keys'>
-/** 大模型配置可用：填写了模型名，且已保存密钥或为本地模型（与主进程判断一致） */
+/** 大模型配置可用：填写了模型名即可，密钥可选（与主进程判断一致） */
 export function profileReady(s: Snapshot, profileId: string | null | undefined): boolean {
   const profile = s.config?.profiles.find((p) => p.id === profileId)
-  return !!profile?.model && (isLocalUrl(profile.baseUrl) || !!s.keys[profile.id])
+  return !!profile?.model
 }
 /** 全文总结所用的大模型是否可用（设计文档 8.6） */
 export function llmReady(s: Snapshot): boolean {

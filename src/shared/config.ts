@@ -57,12 +57,15 @@ export function defaultConfig(): AppConfig {
     mt: { youdaoAppKey: '', privacyAcked: [], hideFreeHint: false }
   }
 }
-export function isLocalUrl(baseUrl: string): boolean {
-  try {
-    return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseUrl).hostname)
-  } catch {
-    return false
-  }
+/** 去掉 Base URL 和模型名的首尾空白（复制粘贴常带空格），不改动内容本身 */
+export function normalizeProfile<T>(profile: T): T {
+  if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return profile
+  const p = profile as Record<string, unknown>
+  return {
+    ...p,
+    ...(typeof p.baseUrl === 'string' && { baseUrl: p.baseUrl.trim() }),
+    ...(typeof p.model === 'string' && { model: p.model.trim() })
+  } as T
 }
 function validTranslator(value: unknown): value is Translator {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
@@ -74,17 +77,16 @@ function validTranslator(value: unknown): value is Translator {
 }
 /**
  * 读取已保存配置时补齐 / 修正机器翻译相关字段（设计文档 8.6）。
- * 旧配置没有 translator：当前大模型可用 → llm，否则 → 微软免费；非法值回退到微软免费。
+ * 旧配置没有 translator：当前大模型已填写模型名 → llm，否则 → 微软免费；非法值回退到微软免费。
  */
-export function migrateConfig(raw: AppConfig, hasKey: (profileId: string) => boolean): AppConfig {
+export function migrateConfig(raw: AppConfig): AppConfig {
   const config = structuredClone(raw) as AppConfig & Record<string, unknown>,
     settings = config.settings as AppSettings & Record<string, unknown>
+  if (Array.isArray(config.profiles)) config.profiles = config.profiles.map(normalizeProfile)
   if (!validTranslator(settings.translator)) {
     const profile = config.profiles?.find((p) => p.id === settings.activeProfileId)
     settings.translator =
-      settings.translator === undefined &&
-      profile?.model &&
-      (isLocalUrl(profile.baseUrl) || hasKey(profile.id))
+      settings.translator === undefined && profile?.model
         ? { kind: 'llm' }
         : { kind: 'mt', engineId: DEFAULT_MT_ENGINE }
   }
@@ -112,10 +114,8 @@ export function validId(value: unknown): asserts value is string {
   if (['__proto__', 'prototype', 'constructor'].includes(value) || !/^[\w:.-]+$/.test(value))
     throw new Error('标识无效')
 }
-export function validateProfile(
-  value: unknown,
-  approvedHttp: readonly string[] = []
-): asserts value is ModelProfile {
+// Base URL 由用户自行决定（HTTP / 局域网 / 自建网关均可），这里只做类型与长度检查。
+export function validateProfile(value: unknown): asserts value is ModelProfile {
   record(value)
   validId(value.id)
   stringField(value.name, 100)
@@ -123,21 +123,6 @@ export function validateProfile(
   stringField(value.baseUrl, 2048)
   if (!['openai-compatible', 'anthropic', 'azure-openai'].includes(value.provider as string))
     throw new Error('接口类型无效')
-  const url = new URL(value.baseUrl)
-  if (
-    url.username ||
-    url.password ||
-    url.hash ||
-    (url.protocol !== 'https:' &&
-      !(
-        url.protocol === 'http:' &&
-        (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ||
-          approvedHttp.some(
-            (s) => new URL(s).href.replace(/\/$/, '') === url.href.replace(/\/$/, '')
-          ))
-      ))
-  )
-    throw new Error('Base URL 必须为 HTTPS，只有本地模型可使用 HTTP')
   if (
     typeof value.temperature !== 'number' ||
     !Number.isFinite(value.temperature) ||
@@ -172,10 +157,7 @@ export function validateProfile(
   )
     throw new Error('模型配置包含未知字段')
 }
-export function validateConfig(
-  value: unknown,
-  approvedHttp: readonly string[] = []
-): asserts value is AppConfig {
+export function validateConfig(value: unknown): asserts value is AppConfig {
   record(value)
   if (
     Object.keys(value).some((k) => !['settings', 'profiles', 'presets', 'recent', 'mt'].includes(k))
@@ -183,7 +165,7 @@ export function validateConfig(
     throw new Error('配置包含未知字段')
   if (!Array.isArray(value.profiles) || !value.profiles.length || value.profiles.length > 100)
     throw new Error('至少保留一个模型')
-  value.profiles.forEach((p) => validateProfile(p, approvedHttp))
+  value.profiles.forEach((p) => validateProfile(p))
   if (new Set(value.profiles.map((p) => p.id)).size !== value.profiles.length)
     throw new Error('模型标识重复')
   if (!Array.isArray(value.presets) || !value.presets.length || value.presets.length > 100)

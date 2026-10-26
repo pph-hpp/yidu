@@ -20,7 +20,6 @@ async function launch() {
     [
       'scripts/import-api.cjs',
       path.resolve('api.txt'),
-      '--allow-this-http',
       '--user-data-dir=' + profile,
       ...process.argv.slice(2).filter((a) => a.startsWith('--model='))
     ],
@@ -77,7 +76,6 @@ async function launch() {
       translations,
       statuses,
       ...config,
-      httpException: config.protocol === 'http:' ? '仅用户批准的 API Base URL' : '无（HTTPS）',
       plaintextInConfig: fs.readFileSync(path.join(profile, 'config.json'), 'utf8').includes(key),
       plaintextInSecrets: fs.readFileSync(path.join(profile, 'secrets.json'), 'utf8').includes(key)
     }

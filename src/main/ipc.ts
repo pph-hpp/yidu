@@ -16,7 +16,7 @@ export function registerIPC(
 ): void {
   const files = new FileService()
   const secrets = new SecretService(),
-    config = new ConfigService((id) => secrets.has(id)),
+    config = new ConfigService(),
     llm = new LLMService(config, secrets)
   const summary = new SummaryService(llm, files)
   const payload = (arg: unknown): Record<string, unknown> => {
