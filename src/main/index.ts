@@ -8,17 +8,23 @@ app.setName('yidu')
 if (app.commandLine.hasSwitch('user-data-dir'))
   app.setPath('userData', app.commandLine.getSwitchValue('user-data-dir'))
 let mainWindow: BrowserWindow | null = null
-let pendingPaths = process.argv.filter((p) => isAbsolute(p) && /\.(pdf|md|markdown)$/i.test(p))
+const docPaths = (args: string[]) =>
+  args.filter((p) => isAbsolute(p) && /\.(pdf|md|markdown)$/i.test(p))
+let pendingPaths = docPaths(process.argv)
 const primary = app.requestSingleInstanceLock()
 if (!primary) app.quit()
-app.on('second-instance', (_event, argv) => {
-  const paths = argv.filter((p) => isAbsolute(p) && /\.(pdf|md|markdown)$/i.test(p))
+const openPaths = (paths: string[]) => {
   if (mainWindow && !mainWindow.webContents.isLoading()) {
     mainWindow.webContents.send(IPC.FILE_OPEN_PATH, paths)
     if (mainWindow.isMinimized()) mainWindow.restore()
     mainWindow.show()
     mainWindow.focus()
   } else pendingPaths.push(...paths)
+}
+app.on('second-instance', (_event, argv) => openPaths(docPaths(argv)))
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  openPaths(docPaths([path]))
 })
 function createWindow(): void {
   const appUrl = process.env.ELECTRON_RENDERER_URL
@@ -57,8 +63,11 @@ function createWindow(): void {
         )
         .catch(() => {})
   }
+  const mac = process.platform === 'darwin'
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
+      // macOS quit
+      ...(mac ? [{ role: 'appMenu' as const }] : []),
       {
         label: '文件',
         submenu: [
@@ -67,12 +76,14 @@ function createWindow(): void {
           { label: '另存为', accelerator: 'CmdOrCtrl+Shift+S', click: () => shortcut('s', true) },
           { type: 'separator' },
           { label: '关闭标签', accelerator: 'CmdOrCtrl+W', click: () => shortcut('w') },
-          { label: '退出', click: () => win.close() }
+          ...(mac ? [] : [{ label: '退出', click: () => win.close() }])
         ]
-      }
+      },
+      // macOS copy/paste
+      ...(mac ? [{ role: 'editMenu' as const }] : [])
     ])
   )
-  win.setMenuBarVisibility(false)
+  if (!mac) win.setMenuBarVisibility(false)
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (isExternalLink(url)) void shell.openExternal(url).catch(() => {})
     return { action: 'deny' }

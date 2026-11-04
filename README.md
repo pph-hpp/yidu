@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-green"></a>
-  <img alt="Platform" src="https://img.shields.io/badge/Platform-Windows-2E7D6B">
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-2E7D6B">
   <a href="https://github.com/pph-hpp/yidu/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/pph-hpp/yidu?style=flat"></a>
 </p>
 
@@ -80,7 +80,7 @@ Highlights, background colors, text colors and notes are saved as standard PDF a
 3. Press `Ctrl+O` to open a PDF or Markdown file, then select English text to see the translation.
 4. (Optional) Open settings (`Ctrl+,`) → “模型 API” (Model API) and enter a Base URL, model name and API key to enable LLM translation and summaries.
 
-Build a Windows installer with `npm run dist`. See [docs/development.md](docs/development.md) (Chinese) for development and testing.
+Build a Windows installer with `npm run dist`, or a macOS one with `npm run dist:mac` (must run on macOS). See [docs/development.md](docs/development.md) (Chinese) for development and testing.
 
 ## Keyboard shortcuts
 
