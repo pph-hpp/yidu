@@ -41,6 +41,8 @@ npm run test        # 单元测试（vitest）
 npm run e2e         # 端到端测试（Playwright + 真实 Electron）
 npm run dist        # 构建 Windows 安装包
 npm run pack        # 只生成未安装目录 dist/win-unpacked
+npm run dist:mac    # 构建 macOS 安装包（arm64 + x64 的 dmg 与 zip）
+npm run pack:mac    # 只生成未打包的 dist/mac-<arch>/译读.app
 node scripts/verify-package.cjs
 ```
 
@@ -49,6 +51,16 @@ node scripts/verify-package.cjs
 - 检查会生成 `test-results/`、`tests/evidence/`、`.local/` 等临时目录，均不纳入版本控制，可随时删除。
 - `npm run fixtures` 重新生成原创 CC0 测试素材；第三方论文节选的来源与 CC BY 4.0 说明见 `tests/fixtures/LICENSE.txt`。
 - Windows 上首次解压 electron-builder 的 `winCodeSign` 缓存需要符号链接权限（开发者模式或管理员），否则签名与写入图标步骤会失败，但应用代码仍会打包到 `dist/win-unpacked`。
+- macOS 打包必须在 macOS 上进行（dmg 与签名依赖系统工具）。没有 Apple 开发者证书时 electron-builder 会跳过正式签名，`scripts/after-pack.cjs` 会在翻 Electron Fuses 后重新打一次 ad-hoc 签名，应用可本机运行；但未经签名与公证的包在别人机器上会被 Gatekeeper 拦下，需右键「打开」或执行 `xattr -dr com.apple.quarantine '/Applications/译读.app'`。
+- 应用图标由 `resources/icon.png` 生成，`scripts/prepare-icon.py` 按 1024×1024 绘制：macOS 的 icns 转换要求源图至少 512×512，尺寸不足会退回默认 Electron 图标。
+- **打包卡住不动时**：`app-builder` 从 GitHub 下载 Electron 没有超时，连接被掐断后进程会一直挂着，既不前进也不报错。设镜像即可绕开：
+
+  ```bash
+  ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run dist:mac
+  ```
+
+  下载中断还会在 `~/Library/Caches/electron/` 留下残缺的 zip。它会被识别为损坏并触发重新下载，于是再次挂在同一处——表现为「每次都卡住」。此时删掉对应的 `electron-v<版本>-<平台>-<arch>.zip` 和 `*.part*` 碎片后用镜像重跑。
+- 已有校验过的 zip 时，也可放进一个目录（例如 `.local/electron-dist/`），用 `-c.electronDist=.local/electron-dist` 直接复用、完全跳过下载。zip 的 sha256 可与 `node_modules/electron/checksums.json` 核对。
 
 ## 真实接口验证（手动执行）
 

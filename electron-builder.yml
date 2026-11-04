@@ -16,6 +16,16 @@ win:
       arch: [x64]
   icon: resources/icon.ico
   artifactName: Yidu-Setup-${version}-${arch}.${ext}
+mac:
+  target:
+    - target: dmg
+    - target: zip
+  icon: resources/icon.png
+  category: public.app-category.productivity
+  darkModeSupport: true
+  artifactName: Yidu-${version}-${arch}.${ext}
+dmg:
+  artifactName: Yidu-${version}-${arch}.${ext}
 nsis:
   oneClick: false
   perMachine: false
