@@ -250,7 +250,7 @@ export function validateConfig(value: unknown): asserts value is AppConfig {
     record(f)
     stringField(f.path, 32767)
     stringField(f.name, 32767)
-    if (!['pdf', 'md'].includes(f.kind as string) || typeof f.mtimeMs !== 'number')
+    if (!['pdf', 'md', 'ipynb'].includes(f.kind as string) || typeof f.mtimeMs !== 'number')
       throw new Error('最近文件无效')
   }
 }

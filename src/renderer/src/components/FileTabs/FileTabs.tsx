@@ -24,7 +24,10 @@ export function FileTabs({ openFile }: { openFile(): void }) {
             title={file.path}
             onClick={() => useDocStore.getState().setActive(file.fileId)}
           >
-            <Icon name={file.kind === 'pdf' ? 'file' : 'markdown'} size={14} />
+            <Icon
+              name={file.kind === 'pdf' ? 'file' : file.kind === 'ipynb' ? 'notebook' : 'markdown'}
+              size={14}
+            />
             <span>{file.name}</span>
             {isDirty(edits[file.fileId]) && (
               <i className={styles.dirty} title="有未保存的修改" aria-label="有未保存的修改" />

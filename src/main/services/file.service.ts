@@ -1,4 +1,5 @@
-import {readMarkdownImages} from './markdown-images'
+import { decodeNotebookImages, readMarkdownImages } from './markdown-images'
+import { notebookText, parseNotebook } from '../../shared/notebook'
 import { validId } from '../../shared/config'
 import { validateAnnots, type PdfSaveRequest } from '../../shared/annotations'
 import { atomicWrite } from './atomic-write'
@@ -14,6 +15,7 @@ import { open, realpath, stat } from 'node:fs/promises'
 import { basename, extname, isAbsolute, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import type { OpenedFile } from '../../shared/types'
+export const DOC_EXTENSIONS = ['.pdf', '.md', '.markdown', '.ipynb']
 export const MAX_FILE_BYTES = 200 * 1024 * 1024
 export function validateOpenPath(req: unknown): string {
   if (
@@ -27,8 +29,8 @@ export function validateOpenPath(req: unknown): string {
     !isAbsolute(req.path)
   )
     throw new Error('无效的文件路径')
-  if (!['.pdf', '.md', '.markdown'].includes(extname(req.path).toLowerCase()))
-    throw new Error('只支持 PDF、MD 和 Markdown 文件')
+  if (!DOC_EXTENSIONS.includes(extname(req.path).toLowerCase()))
+    throw new Error('只支持 PDF、Markdown 和 Jupyter Notebook（.ipynb）文件')
   return req.path
 }
 export class FileService {
@@ -46,15 +48,21 @@ export class FileService {
       if (stat.size > MAX_FILE_BYTES) throw new Error('文件超过 200 MB，请选择较小的文件')
       const data = await handle.readFile()
       if (data.byteLength > MAX_FILE_BYTES) throw new Error('文件超过 200 MB')
-      const kind = extname(path).toLowerCase() === '.pdf' ? 'pdf' : 'md'
+      const ext = extname(path).toLowerCase()
+      const kind: OpenedFile['kind'] = ext === '.pdf' ? 'pdf' : ext === '.ipynb' ? 'ipynb' : 'md'
       let text: string | undefined
-      if (kind === 'md') {
+      if (kind !== 'pdf') {
         try {
           text = new TextDecoder('utf-8', { fatal: true }).decode(data).replace(/^\uFEFF/, '')
         } catch {
-          throw new Error('编码不支持，请将 Markdown 保存为 UTF-8')
+          throw new Error(
+            kind === 'md'
+              ? '编码不支持，请将 Markdown 保存为 UTF-8'
+              : '编码不支持，Notebook 必须是 UTF-8'
+          )
         }
       }
+      const parsed = kind === 'ipynb' ? parseNotebook(text ?? '') : undefined
       const key = process.platform === 'win32' ? path.toLowerCase() : path
       const fileId = this.ids.get(key) ?? randomUUID()
       this.ids.set(key, fileId)
@@ -70,7 +78,24 @@ export class FileService {
         name: basename(path),
         kind,
         mtimeMs: stat.mtimeMs,
-        ...(kind === 'pdf' ? { bytes } : { text,images:await readMarkdownImages(path,text??'') })
+        ...(kind === 'pdf'
+          ? { bytes }
+          : parsed
+            ? {
+                text: notebookText(parsed.notebook),
+                notebook: parsed.notebook,
+                images: {
+                  ...(await readMarkdownImages(
+                    path,
+                    parsed.notebook.cells
+                      .filter((c) => c.type === 'markdown')
+                      .map((c) => c.source)
+                      .join('\n\n')
+                  )),
+                  ...decodeNotebookImages(parsed.images)
+                }
+              }
+            : { text, images: await readMarkdownImages(path, text ?? '') })
       }
     } finally {
       await handle.close()

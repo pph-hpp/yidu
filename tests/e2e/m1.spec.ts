@@ -33,7 +33,7 @@ test.beforeEach(async ({}, info) => {
     await window.api.setConfig({ ...c, mt: { ...c.mt, privacyAcked: ['microsoft-free'] } })
   })
   await page.reload()
-  await expect(page.getByText('打开 PDF 或 Markdown 文件', { exact: true })).toBeVisible()
+  await expect(page.getByText('打开 PDF、Markdown 或 Notebook 文件', { exact: true })).toBeVisible()
 })
 test.afterEach(async () => {
   await app?.close()

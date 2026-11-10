@@ -91,7 +91,7 @@ test.beforeEach(async ({}, info) => {
   env.YIDU_MT_BASE_YOUDAO = base + '/yd'
   app = await electron.launch({ args: ['.', '--user-data-dir=' + data], env })
   page = await app.firstWindow()
-  await expect(page.getByText('打开 PDF 或 Markdown 文件', { exact: true })).toBeVisible()
+  await expect(page.getByText('打开 PDF、Markdown 或 Notebook 文件', { exact: true })).toBeVisible()
 })
 test.afterEach(async () => {
   await app?.close()
@@ -272,4 +272,56 @@ test('A18 有道智云：剪贴板识别、测试连接、保存后翻译，密�
   await expect(cards().nth(1)).toContainText('有道译文：However, variation adds uncertainty.')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   expect(mock.requests.youdao).toBeGreaterThanOrEqual(3)
+})
+test('Jupyter Notebook：单元格渲染、输出、安全图片、选中翻译与最近文件', async () => {
+  await ackPrivacy('microsoft-free')
+  await openFixture('notebook.ipynb')
+  const doc = page.getByLabel('Notebook 文档', { exact: true })
+  await expect(doc).toBeVisible()
+  const article = doc.locator('article')
+  await expect(article.locator('h1')).toHaveText('Notebook Reader')
+  await expect(article.locator('table')).toBeVisible()
+  await expect(article.locator('.katex')).toHaveCount(1)
+  // 代码单元格：语言标注、执行编号与高亮
+  await expect(article.locator('code[data-lang="python"]')).toHaveCount(2)
+  await expect(article.locator('.nb-label').first()).toHaveText('In [3] · python')
+  await expect(article.locator('.hljs-keyword').first()).toBeVisible()
+  // 输出：流、结果、错误为纯文本；HTML 只显示源码，伪造的 PNG 不加载
+  await expect(article.locator('.nb-output', { hasText: 'ready' })).toBeVisible()
+  await expect(article.locator('.nb-output', { hasText: '0.125' })).toBeVisible()
+  await expect(article.locator('.nb-error')).toHaveText('TypeError: unsupported operand type(s)')
+  await expect(article).toContainText('<script>globalThis.pwnedHtml=1</script>')
+  await expect(article).toContainText('[图片无法显示]')
+  await expect(article.locator('script, b, img[src="x"]')).toHaveCount(0)
+  expect(
+    await page.evaluate(() => ['pwned', 'pwnedHtml', 'pwnedImg'].some((k) => k in window))
+  ).toBe(false)
+  // 附件图与输出图都以 blob: 显示且能解码；远程图片不加载
+  const images = article.locator('img')
+  await expect(images).toHaveCount(2)
+  for (const img of await images.all()) {
+    await expect(img).toHaveAttribute('src', /^blob:/)
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
+      .toBeGreaterThan(0)
+  }
+  // 选中 Markdown 单元格中的段落翻译
+  await article
+    .locator('.nb-markdown p', { hasText: 'Transformers replaced' })
+    .evaluate((element) => {
+      const range = document.createRange()
+      range.selectNodeContents(element)
+      const selection = window.getSelection()!
+      selection.removeAllRanges()
+      selection.addRange(range)
+      element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+    })
+  await expect(page.getByRole('toolbar', { name: '选区操作' })).toBeVisible()
+  await expect(cards()).toHaveCount(1)
+  await expect(cards()).toContainText(
+    '微软译文：Transformers replaced recurrence with self-attention, enabling parallel training.'
+  )
+  expect(mock.requests.microsoft).toBeGreaterThan(0)
+  const recent = await page.evaluate(() => window.api.recentFiles())
+  expect(recent[0]).toMatchObject({ name: 'notebook.ipynb', kind: 'ipynb' })
 })

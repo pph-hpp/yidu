@@ -40,7 +40,7 @@ export function DocumentPane({
         <div className={styles.empty}>
           <div className={styles.card}>
             <Icon name="file" size={36} />
-            <h1>打开 PDF 或 Markdown 文件</h1>
+            <h1>打开 PDF、Markdown 或 Notebook 文件</h1>
             <p>或把文件拖到这里 · Ctrl+O</p>
             <button className="primary" onClick={openFile}>
               打开文件

@@ -19,7 +19,7 @@
   <img src="docs/images/hero.png" alt="Read a paper on the left, sentence-by-sentence translation on the right" width="900">
 </p>
 
-Yidu (译读, "translate & read") is a desktop reader for PDF and Markdown papers. Select text on the left and get a side-by-side translation on the right — translation above, original below, one sentence per card. Plug in your own LLM API with domain prompts, or translate with free engines without any API key. The interface is currently in Simplified Chinese and translates into Chinese.
+Yidu (译读, "translate & read") is a desktop reader for PDF, Markdown and Jupyter Notebook (`.ipynb`) papers. Select text on the left and get a side-by-side translation on the right — translation above, original below, one sentence per card. Plug in your own LLM API with domain prompts, or translate with free engines without any API key. The interface is currently in Simplified Chinese and translates into Chinese.
 
 ## Features
 
@@ -77,7 +77,7 @@ Highlights, background colors, text colors and notes are saved as standard PDF a
    npm run dev
    ```
 
-3. Press `Ctrl+O` to open a PDF or Markdown file, then select English text to see the translation.
+3. Press `Ctrl+O` to open a PDF, Markdown or Jupyter Notebook file, then select English text to see the translation.
 4. (Optional) Open settings (`Ctrl+,`) → “模型 API” (Model API) and enter a Base URL, model name and API key to enable LLM translation and summaries.
 
 Build a Windows installer with `npm run dist`, or a macOS one with `npm run dist:mac` (must run on macOS). See [docs/development.md](docs/development.md) (Chinese) for development and testing.

@@ -6,11 +6,17 @@ import typescript from 'highlight.js/lib/languages/typescript'
 import python from 'highlight.js/lib/languages/python'
 import cpp from 'highlight.js/lib/languages/cpp'
 import json from 'highlight.js/lib/languages/json'
+import r from 'highlight.js/lib/languages/r'
+import julia from 'highlight.js/lib/languages/julia'
+import bash from 'highlight.js/lib/languages/bash'
 hljs.registerLanguage('javascript', javascript)
 hljs.registerLanguage('typescript', typescript)
 hljs.registerLanguage('python', python)
 hljs.registerLanguage('cpp', cpp)
 hljs.registerLanguage('json', json)
+hljs.registerLanguage('r', r)
+hljs.registerLanguage('julia', julia)
+hljs.registerLanguage('bash', bash)
 const md = new MarkdownIt({
   html: false,
   linkify: true,
@@ -18,8 +24,9 @@ const md = new MarkdownIt({
   highlight: (code, lang) =>
     lang && hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : ''
 }).use(katex, { throwOnError: false })
+// attachment: 是 Notebook 单元格附件；链接会在 link_open 中去掉 href，图片只在已解码时显示
 md.validateLink = (url) =>
-  /^(https?:|mailto:|#)/i.test(url) ||
+  /^(https?:|mailto:|#|attachment:)/i.test(url) ||
   (!/^[a-z][a-z0-9+.-]*:|^[\\/]/i.test(url) && !url.includes('\0'))
 // Never load local/remote resources named by an untrusted Markdown document.
 md.renderer.rules.image = (tokens, index, _options, env) => {
@@ -59,3 +66,9 @@ md.core.ruler.push('heading-anchors', (state) => {
 })
 export const renderMarkdown = (text: string, images: Record<string, string> = {}): string =>
   md.render(text, { images })
+/** 代码高亮；未注册的语言只做 HTML 转义 */
+export const highlightCode = (code: string, lang: string): string =>
+  lang && hljs.getLanguage(lang)
+    ? hljs.highlight(code, { language: lang }).value
+    : md.utils.escapeHtml(code)
+export const escapeHtml = (text: string): string => md.utils.escapeHtml(text)

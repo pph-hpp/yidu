@@ -92,7 +92,7 @@ export function App() {
         void openPaths(
           Array.from(e.dataTransfer.files)
             .map((file) => window.api.getPathForFile(file))
-            .filter((path) => /\.(pdf|md|markdown)$/i.test(path))
+            .filter((path) => /\.(pdf|md|markdown|ipynb)$/i.test(path))
         )
       }}
     >

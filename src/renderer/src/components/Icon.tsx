@@ -18,6 +18,7 @@ const paths = {
   lock: 'M5 10h14v11H5z M8 10V6a4 4 0 0 1 8 0v4',
   arrow: 'M12 20V4 M5 11l7-7 7 7',
   markdown: 'M2 5v14 M2 5l5 7 5-7v14 M18 5v14 M15 16l3 3 3-3',
+  notebook: 'M5 3h14v18H5z M9 3v18 M2 7h3 M2 12h3 M2 17h3 M12 8h4 M12 12h4',
   chevron: 'm6 9 6 6 6-6',
   check: 'M5 12.5 10 17.5 19 7'
 } as const
