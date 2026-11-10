@@ -20,7 +20,7 @@ test.beforeEach(async ({}, info) => {
   delete env.ELECTRON_RUN_AS_NODE
   app = await electron.launch({ args: ['.', '--user-data-dir=' + data], env })
   page = await app.firstWindow()
-  await expect(page.getByText('打开 PDF 或 Markdown 文件', { exact: true })).toBeVisible()
+  await expect(page.getByText('打开 PDF、Markdown 或 Notebook 文件', { exact: true })).toBeVisible()
 })
 test.afterEach(async () => {
   await app?.close()

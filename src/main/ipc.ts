@@ -60,9 +60,11 @@ export function registerIPC(
   handle(IPC.FILE_OPEN, async (arg) => {
     if (arg !== undefined) throw new Error('打开文件不接受参数')
     const result = await dialog.showOpenDialog(win, {
-      title: '打开 PDF 或 Markdown 文件',
+      title: '打开 PDF、Markdown 或 Notebook 文件',
       properties: ['openFile'],
-      filters: [{ name: 'PDF / Markdown', extensions: ['pdf', 'md', 'markdown'] }]
+      filters: [
+        { name: 'PDF / Markdown / Notebook', extensions: ['pdf', 'md', 'markdown', 'ipynb'] }
+      ]
     })
     return result.canceled ? null : openRecent({ path: result.filePaths[0] })
   })

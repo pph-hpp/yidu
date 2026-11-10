@@ -6,6 +6,43 @@ const parser = new MarkdownIt({ html: false })
 export function relativeImage(src: string): boolean {
   return !!src && !/^[a-z][a-z0-9+.-]*:|^[\\/#]/i.test(src) && !src.includes('\0')
 }
+/** 用文件头确认图片类型，拒绝伪装成图片的其他内容 */
+export function validImage(bytes: Buffer, type: string): boolean {
+  return type === 'image/png'
+    ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+    : type === 'image/jpeg'
+      ? bytes[0] === 255 && bytes[1] === 216
+      : type === 'image/gif'
+        ? /^GIF8[79]a/.test(bytes.subarray(0, 6).toString())
+        : type === 'image/webp'
+          ? bytes.subarray(0, 4).toString() === 'RIFF' &&
+            bytes.subarray(8, 12).toString() === 'WEBP'
+          : false
+}
+/**
+ * Notebook 内嵌图片（输出与附件）：只接受 PNG/JPEG，校验 base64 与文件头，
+ * 单张 10 MB、合计 100 MB、最多 200 张。
+ */
+export function decodeNotebookImages(
+  images: Record<string, { mime: string; data: string }>
+): NonNullable<OpenedFile['images']> {
+  const result: NonNullable<OpenedFile['images']> = {}
+  let total = 0,
+    count = 0
+  for (const [key, image] of Object.entries(images)) {
+    if (count >= 200) break
+    if (image.mime !== 'image/png' && image.mime !== 'image/jpeg') continue
+    const data = image.data.replace(/\s+/g, '')
+    if (!data || data.length > 14 * 1024 * 1024 || !/^[A-Za-z0-9+/]+={0,2}$/.test(data)) continue
+    const bytes = Buffer.from(data, 'base64')
+    if (bytes.length > 10 * 1024 * 1024 || total + bytes.length > 100 * 1024 * 1024) continue
+    if (!validImage(bytes, image.mime)) continue
+    result[key] = { bytes: new Uint8Array(bytes), mime: image.mime }
+    total += bytes.length
+    count++
+  }
+  return result
+}
 export async function readMarkdownImages(
   path: string,
   text: string
@@ -48,16 +85,7 @@ export async function readMarkdownImages(
           continue
         const bytes = await file.readFile()
         if (bytes.length > 10 * 1024 * 1024) continue
-        const valid =
-          type === 'image/png'
-            ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-            : type === 'image/jpeg'
-              ? bytes[0] === 255 && bytes[1] === 216
-              : type === 'image/gif'
-                ? /^GIF8[79]a/.test(bytes.subarray(0, 6).toString())
-                : bytes.subarray(0, 4).toString() === 'RIFF' &&
-                  bytes.subarray(8, 12).toString() === 'WEBP'
-        if (valid) {
+        if (validImage(bytes, type)) {
           result[src] = { bytes: new Uint8Array(bytes), mime: type }
           total += bytes.length
         }

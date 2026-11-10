@@ -9,7 +9,7 @@ export async function extractText(
   const check = () => {
     if (signal.aborted) throw new DOMException('已取消', 'AbortError')
   }
-  if (file.kind === 'md') {
+  if (file.kind !== 'pdf') {
     check()
     progress(1, 1)
     return file.text || ''

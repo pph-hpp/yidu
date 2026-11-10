@@ -9,7 +9,7 @@ if (app.commandLine.hasSwitch('user-data-dir'))
   app.setPath('userData', app.commandLine.getSwitchValue('user-data-dir'))
 let mainWindow: BrowserWindow | null = null
 const docPaths = (args: string[]) =>
-  args.filter((p) => isAbsolute(p) && /\.(pdf|md|markdown)$/i.test(p))
+  args.filter((p) => isAbsolute(p) && /\.(pdf|md|markdown|ipynb)$/i.test(p))
 let pendingPaths = docPaths(process.argv)
 const primary = app.requestSingleInstanceLock()
 if (!primary) app.quit()

@@ -19,7 +19,7 @@
   <img src="docs/images/hero.png" alt="左侧阅读论文，右侧逐句对照翻译" width="900">
 </p>
 
-译读（Yidu）是一款桌面文献阅读器：左边读 PDF / Markdown，右边逐句显示「译文在上、原文在下」的对照翻译。可以接入你自己的大模型 API 并注入领域提示词，也可以不配置任何密钥，直接用免费引擎翻译。
+译读（Yidu）是一款桌面文献阅读器：左边读 PDF / Markdown / Jupyter Notebook（.ipynb），右边逐句显示「译文在上、原文在下」的对照翻译。可以接入你自己的大模型 API 并注入领域提示词，也可以不配置任何密钥，直接用免费引擎翻译。
 
 ## 功能
 
@@ -78,7 +78,7 @@
    ```
 
    国内下载 Electron 较慢时，可先设置环境变量 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`。
-3. `Ctrl+O` 打开 PDF 或 Markdown，选中英文即可在右侧看到逐句译文。
+3. `Ctrl+O` 打开 PDF、Markdown 或 Jupyter Notebook，选中英文即可在右侧看到逐句译文。
 4. （可选）打开设置（`Ctrl+,`）→「模型 API」，填写 Base URL、模型名称和 API Key，即可使用大模型翻译与全文总结。
 
 打包 Windows 安装包：`npm run dist`；打包 macOS 安装包：`npm run dist:mac`（需在 macOS 上执行）。更多开发与测试说明见 [docs/development.md](docs/development.md)。

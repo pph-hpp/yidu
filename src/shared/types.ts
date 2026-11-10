@@ -1,12 +1,16 @@
 import type { MtEngineId } from './mt'
-export type DocKind = 'pdf' | 'md'
+import type { NotebookDoc } from './notebook'
+export type DocKind = 'pdf' | 'md' | 'ipynb'
 export interface OpenedFile {
   fileId: string
   path: string
   name: string
   kind: DocKind
   bytes?: Uint8Array
+  /** Markdown 原文；Notebook 为提取出的文字内容（供全文总结使用） */
   text?: string
+  /** 仅 ipynb：解析后的单元格与输出 */
+  notebook?: NotebookDoc
   images?: Record<string, { bytes: Uint8Array; mime: string }>
   mtimeMs: number
 }

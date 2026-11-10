@@ -95,7 +95,7 @@ export function registerShortcuts(openFile: () => void): () => void {
     if (typing || event.altKey || !target.closest('[data-document-pane]')) return
     if (['PageUp', 'PageDown', 'Home', 'End'].includes(event.key)) {
       const scroller = document.querySelector<HTMLElement>(
-        '[aria-label="PDF 文档"],[aria-label="Markdown 文档"]'
+        '[aria-label="PDF 文档"],[aria-label="Markdown 文档"],[aria-label="Notebook 文档"]'
       )
       if (scroller) {
         event.preventDefault()

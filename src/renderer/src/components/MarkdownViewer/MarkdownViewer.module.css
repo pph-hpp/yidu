@@ -92,3 +92,39 @@
   max-width: 100%;
   height: auto;
 }
+
+/* Jupyter Notebook */
+.paper :global(.nb-cell) + :global(.nb-cell) {
+  margin-top: var(--px-16);
+}
+.paper :global(.nb-markdown) > :first-child {
+  margin-top: 0;
+}
+.paper :global(.nb-code) pre {
+  margin: 0;
+}
+.paper :global(.nb-label) {
+  margin-bottom: var(--px-4);
+  font-family: var(--font-ui);
+  font-size: var(--px-12);
+  color: var(--text-secondary);
+  user-select: none;
+}
+.paper :global(.nb-outputs) {
+  margin-top: var(--px-8);
+  padding-left: var(--px-12);
+  border-left: var(--px-2) solid var(--border);
+}
+.paper pre:global(.nb-output) {
+  margin: 0 0 var(--px-8);
+  padding: var(--px-8) var(--px-12);
+  background: transparent;
+  white-space: pre-wrap;
+  font-family: Consolas, monospace;
+}
+.paper pre:global(.nb-error) {
+  color: var(--danger);
+}
+.paper :global(.nb-image) {
+  margin-bottom: var(--px-8);
+}
